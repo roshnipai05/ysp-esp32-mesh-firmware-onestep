@@ -1,5 +1,3 @@
-// CLI_Functions.cpp
-
 #include "CLI_Functions.h"
 
 void handleSendMessage(String msg, painlessMesh& mesh) {
