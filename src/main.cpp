@@ -1,5 +1,6 @@
 #include <painlessMesh.h>
 #include <FastLED.h>
+#include "CLI_Functions.h"
 
 // some gpio pin that is connected to an LED
 #ifdef LED_BUILTIN
