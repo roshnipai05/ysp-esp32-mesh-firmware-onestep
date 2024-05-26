@@ -36,28 +36,20 @@ def receive_messages(ser):
             print(f"Received message: {message}")
 
 def handle_send_message(command):
-    match = re.match(r'Send_Message (\d+) (\w+)$', command)
+    match = re.match(r'Send (\d+) (\w+)$', command)
     if not match:
-        print("Usage: Send_Message NodeID HexColorID")
-    else:
+        print("Usage: Send TargetNode HexColorID ")
+    else: # 
         node_id = match.group(1)
         hex_color = match.group(2)
-        full_message = f"Send_Message {node_id} {key} {hex_color}"
-
+        full_message = f"Send {node_id} {hex_color} {key} "
 
         ser.write((full_message + '\n').encode('utf-8'))
         print(f"Sent encrypted message to node {node_id} with color {hex_color}")
-
-def handle_broadcast_message(command):
-    match = re.match(r'Broadcast_Message (\w+)$', command)
-    if not match:
-        print("Usage: Broadcast_Message HexColorID")
-    else:
-        hex_color = match.group(1)
-        full_message = f"Broadcast_Message {key} {hex_color}"
-        encrypted_message = caesar_cipher_encrypt(full_message)
-        ser.write((encrypted_message + '\n').encode('utf-8'))
-        print(f"Sent encrypted broadcast message with color {hex_color}")
+        time.sleep(1) 
+        while ser.in_waiting > 0:
+            response = ser.readline().decode('utf-8').strip()
+            print(response)
 
 
 def handle_show_message(command):
@@ -90,25 +82,24 @@ def handle_debug_mode(command):
 
 def handle_list_colors(command):
     colors = {
-        "Red": "#FF0000",
-        "Green": "#00FF00",
-        "Blue": "#0000FF",
-        "Yellow": "#FFFF00",
-        "Cyan": "#00FFFF",
-        "Magenta": "#FF00FF",
-        "White": "#FFFFFF",
-        "Black": "#000000"
+        "Red": "0xFF0000",
+        "Green": "0x00FF00",
+        "Blue": "0x0000FF",
+        "Yellow": "0xFFFF00",
+        "Cyan": "0x00FFFF",
+        "Magenta": "0xFF00FF",
+        "White": "0xFFFFFF",
+        "Black": "0x000000"
     }
-    print("Available colors and their hex codes:")
+    print("colors and their hex codes:")
     for color, code in colors.items():
         print(f"{color}: {code}")
 
 def handle_unknown_command(command):
-    print("Unknown command. Available commands: Send_Message, Broadcast_Message, ShowMessage, List_Nodes, DebugMode")
+    print("Unknown command. Available commands: Send, ShowMessage, List_Nodes, List_Colors")
 
 command_handlers = {
     "Send_Message": handle_send_message,
-    "Broadcast_Message": handle_broadcast_message,
     "ShowMessage": handle_show_message,
     "List_Nodes": handle_list_nodes,
     "DebugMode": handle_debug_mode,
