@@ -3,9 +3,9 @@ import time
 import threading
 import random
 import re
-
+from edit import caesar_cipher_encrypt, caesar_cipher_decrypt
 # Set up the serial connection
-serial_port = 'COM17'  # Change this to your serial port
+serial_port = 'COM21'  # Change this to your serial port
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
@@ -15,18 +15,6 @@ def generate_random_key():
     characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     key = ''.join(random.choice(characters) for _ in range(16))
     return key
-
-
-# Function to encrypt the message using Caesar cipher
-def caesar_cipher_encrypt(message):
-
-
-    return message
-
-# Function to decrypt the message using Caesar cipher
-def caesar_cipher_decrypt(message):
-    
-    return message
 
 # Function to handle receiving messages
 def receive_messages(ser):
@@ -99,7 +87,7 @@ def handle_unknown_command(command):
     print("Unknown command. Available commands: Send, ShowMessage, List_Nodes, List_Colors")
 
 command_handlers = {
-    "Send_Message": handle_send_message,
+    "Send": handle_send_message,
     "ShowMessage": handle_show_message,
     "List_Nodes": handle_list_nodes,
     "DebugMode": handle_debug_mode,
