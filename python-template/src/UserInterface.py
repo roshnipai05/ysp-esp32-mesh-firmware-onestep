@@ -30,7 +30,9 @@ def handle_send_message(command):
     else: # 
         node_id = match.group(1)
         hex_color = match.group(2)
-        full_message = f"Send {node_id} {hex_color} {key} "
+        message = f"from: User  to:{node_id} {key}"
+
+        full_message = f"Send {node_id} {hex_color} {message} "
 
         ser.write((full_message + '\n').encode('utf-8'))
         print(f"Sent encrypted message to node {node_id} with color {hex_color}")
