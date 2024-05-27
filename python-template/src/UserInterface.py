@@ -24,9 +24,9 @@ def receive_messages(ser):
             print(f"Received message: {message}")
 
 def handle_send_message(command):
-    match = re.match(r'Send (\d+) (\w+)$', command)
+    match = re.match(r'Send (\d+) (#(?:[0-9a-fA-F]{6})|false)$', command)
     if not match:
-        print("Usage: Send TargetNode HexColorID \n Set HexColorID as False for No Lighting") #Send Target node Hexcolor Msg 
+        print("Usage: Send TargetNode HexColorID \n Set HexColorID as false for No Lighting") #Send Target node Hexcolor Msg 
     else: # 
         node_id = match.group(1)
         hex_color = match.group(2)
