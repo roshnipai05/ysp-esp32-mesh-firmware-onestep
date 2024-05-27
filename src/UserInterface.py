@@ -5,7 +5,7 @@ import random
 import re
 from edit import caesar_cipher_encrypt, caesar_cipher_decrypt
 # Set up the serial connection
-serial_port = 'COM21'  # Change this to your serial port
+serial_port = 'COM27'  # Change this to your serial port
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
@@ -26,7 +26,7 @@ def receive_messages(ser):
 def handle_send_message(command):
     match = re.match(r'Send (\d+) (\w+)$', command)
     if not match:
-        print("Usage: Send TargetNode HexColorID ")
+        print("Usage: Send TargetNode HexColorID \n Set HexColorID as False for No Lighting") #Send Target node Hexcolor Msg 
     else: # 
         node_id = match.group(1)
         hex_color = match.group(2)
@@ -38,6 +38,7 @@ def handle_send_message(command):
         while ser.in_waiting > 0:
             response = ser.readline().decode('utf-8').strip()
             print(response)
+
 
 
 def handle_show_message(command):
