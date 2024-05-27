@@ -70,14 +70,14 @@ def handle_debug_mode(command):
 
 def handle_list_colors(command):
     colors = {
-        "Red": "0xFF0000",
-        "Green": "0x00FF00",
-        "Blue": "0x0000FF",
-        "Yellow": "0xFFFF00",
-        "Cyan": "0x00FFFF",
-        "Magenta": "0xFF00FF",
-        "White": "0xFFFFFF",
-        "Black": "0x000000"
+        "Red": "#FF0000",
+        "Green": "#00FF00",
+        "Blue": "#0000FF",
+        "Yellow": "#FFFF00",
+        "Cyan": "#00FFFF",
+        "Magenta": "#FF00FF",
+        "White": "#FFFFFF",
+        "Black": "#000000"
     }
     print("colors and their hex codes:")
     for color, code in colors.items():
