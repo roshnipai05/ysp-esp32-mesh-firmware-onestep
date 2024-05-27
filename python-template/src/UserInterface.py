@@ -4,8 +4,11 @@ import threading
 import random
 import re
 from edit import caesar_cipher_encrypt, caesar_cipher_decrypt
+
 # Set up the serial connection
-serial_port = 'COM27'  # Change this to your serial port
+serial_port = 'COM16'  # Change this to your serial port
+# serial_port = '/dev/cu.usbmodem101'  # Use this on MacOS
+
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
