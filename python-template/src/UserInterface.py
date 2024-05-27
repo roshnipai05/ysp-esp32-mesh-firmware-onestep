@@ -91,7 +91,7 @@ def handle_unknown_command(command):
 
 command_handlers = {
     "Send": handle_send_message,
-    "ShowMessage": handle_show_message,
+    "Show_Message": handle_show_message,
     "List_Nodes": handle_list_nodes,
     "DebugMode": handle_debug_mode,
     "List_Colors": handle_list_colors
