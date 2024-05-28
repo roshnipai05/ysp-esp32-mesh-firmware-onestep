@@ -3,9 +3,12 @@ import time
 import threading
 import random
 import re
-from edit import caesar_cipher_encrypt, caesar_cipher_decrypt
+from edit import encrypt, decrypt
+import edit
+
 # Set up the serial connection
-serial_port = 'COM27'  # Change this to your serial port
+
+serial_port = edit.serial_port  # Change this to your serial port
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
@@ -13,8 +16,8 @@ ser = serial.Serial(serial_port, baud_rate)
 # Function to generate a random 16-character alphanumeric key
 def generate_random_key():
     characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    key = ''.join(random.choice(characters) for _ in range(16))
-    return key
+    payload = ''.join(random.choice(characters) for _ in range(16))
+    return payload
 
 # Function to handle receiving messages
 def receive_messages(ser):
@@ -30,15 +33,17 @@ def handle_send_message(command):
     else: # 
         node_id = match.group(1)
         hex_color = match.group(2)
-        message = f"from: User  to:{node_id} {key}"
+        message = f"To-{node_id} Payload- {payload}"
+        message = encrypt(message)
+        
+        serial_command = f"Send {node_id} {hex_color} {message} "
 
-        full_message = f"Send {node_id} {hex_color} {message} "
-
-        ser.write((full_message + '\n').encode('utf-8'))
+        ser.write((serial_command + '\n').encode('utf-8'))
         print(f"Sent encrypted message to node {node_id} with color {hex_color}")
         time.sleep(1) 
         while ser.in_waiting > 0:
             response = ser.readline().decode('utf-8').strip()
+            response = decrypt(response)
             print(response)
 
 
@@ -50,9 +55,9 @@ def handle_show_message(command):
     else:
         show_message_flag = int(match.group(1))
         if show_message_flag == 0:
-            print(f"Unencrypted key: {key}")
+            print(f"Unencrypted key: {payload}")
         else:
-            encrypted_key = caesar_cipher_encrypt(key)
+            encrypted_key = encrypt(payload)
             print(f"Encrypted key: {encrypted_key}")
 
 
@@ -87,7 +92,7 @@ def handle_list_colors(command):
         print(f"{color}: {code}")
 
 def handle_unknown_command(command):
-    print("Unknown command. Available commands: Send, ShowMessage, List_Nodes, List_Colors")
+    print("Unknown command. Available commands: Send, Show_Message, List_Nodes, List_Colors")
 
 command_handlers = {
     "Send": handle_send_message,
@@ -101,7 +106,7 @@ command_handlers = {
 
 # Main command-line interface
 try:
-    key = generate_random_key()
+    payload = generate_random_key()
     while True:
         command = input("Enter command: ")
         command_name = command.split(maxsplit=1)[0]
