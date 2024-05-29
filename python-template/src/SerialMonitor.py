@@ -20,6 +20,7 @@ def receive_messages(ser):
             line = ser.readline().decode('utf-8').strip()
             if line.startswith("Received"):
                 # Split at received. 0th index is empty, 1st index is the message. 2nd index is light up instruction. Ignore.
+                # TODO: remove after firmware fix on ESPs
                 message_payload = line.split("Received ")[1]
                 try:
                     json_message = json.loads(message_payload)
