@@ -19,7 +19,7 @@
 #define MESH_SSID "whateverYouLike1"
 #define MESH_PASSWORD "somethingSneaky1"
 #define MESH_PORT 5555
-#define VERSION "1.1.0"
+#define VERSION "1.2.1"
 DynamicJsonDocument doc(1024);
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUM_LEDS, LED_PIN);
 // Prototypes
@@ -34,7 +34,7 @@ void lightUpLEDsSequentially();
 void lightUpLEDsOneByOne(RgbColor color, uint16_t delayTime);
 void handleReceivedMessage(const JsonDocument &doc);
 void processSerialInput();
-void pathfinder();
+std::vector<uint32_t> pathfinder(const painlessmesh::protocol::NodeTree &node, const String &prefix, const uint32_t endnode);
 void pathlighting();
 
 Scheduler userScheduler;
@@ -128,6 +128,10 @@ void processSerialInput()
       delayMicroseconds(100);
       taskSendMessage.enable();
     }
+    else if (!words.empty() && words[0] == "topology")
+    {
+      displayJsonTopology();
+    }
   }
 }
 
@@ -136,7 +140,8 @@ void sendMessage()
   String msg;
   serializeJson(doc, msg);
   mesh.sendBroadcast(msg);
-  if (doc["HEX"] != "false"){
+  if (doc["HEX"] != "false")
+  {
     pathlighting();
   }
 
@@ -155,7 +160,7 @@ void sendMessage()
 
 void receivedCallback(uint32_t from, String &msg)
 {
-  Serial.printf("Received %s", msg.c_str());
+  Serial.printf("Received %s\n", msg.c_str());
 
   DynamicJsonDocument receivedDoc(1024);
   deserializeJson(receivedDoc, msg);
@@ -191,16 +196,16 @@ void delayReceivedCallback(uint32_t from, int32_t delay)
 
 void displayJsonTopology()
 {
-  String json = mesh.subConnectionJson();
-  Serial.println(json);
+  String topology_json = mesh.subConnectionJson(true);
+  Serial.println(topology_json);
 }
 void lightUpLEDsSequentially(String hexColorId)
 {
   long number = strtol(&hexColorId[1], NULL, 16); // Convert hex to long
-    int r = number >> 16;                           // First 2 digits of long
-    int g = number >> 8 & 0xFF;                     // Middle 2 digits of long
-    int b = number & 0xFF;  
-  lightUpLEDsOneByOne(RgbColor(r,g,b), 500); // 500ms delay between each LED lighting up
+  int r = number >> 16;                           // First 2 digits of long
+  int g = number >> 8 & 0xFF;                     // Middle 2 digits of long
+  int b = number & 0xFF;
+  lightUpLEDsOneByOne(RgbColor(r, g, b), 500); // 500ms delay between each LED lighting up
   // delay(1000);
 
   // Turn off all LEDs
@@ -221,7 +226,7 @@ void handleReceivedMessage(const JsonDocument &doc)
 {
   if (doc["type"] == "lit" && doc["HEX"] != "false")
   {
-    Serial.println(doc["HEX"].as<String>());
+    // Serial.printf(doc["HEX"].as<String>());
     lightUpLEDsSequentially(doc["HEX"].as<String>());
   }
 }
@@ -230,15 +235,15 @@ std::vector<uint32_t> path;
 std::vector<uint32_t> final_path;
 std::vector<uint32_t> pathfinder(const painlessmesh::protocol::NodeTree &node, const String &prefix, const uint32_t endnode)
 {
-  Serial.println(prefix + String(node.nodeId));
+  // Serial.printf(prefix + String(node.nodeId));
 
   path.push_back(node.nodeId);
   if (endnode == node.nodeId)
   {
     final_path = path;
     path.clear();
-    Serial.println("Node Found");
-    Serial.print("Time: ");
+    Serial.printf("Node Found\n");
+    Serial.print("Time_pathfinder_end: ");
     Serial.println(micros());
     return final_path;
   }
@@ -251,7 +256,7 @@ std::vector<uint32_t> pathfinder(const painlessmesh::protocol::NodeTree &node, c
   }
   path.pop_back();
 
-  Serial.print("Time: ");
+  Serial.printf("Time_pathfinder_end: ");
   Serial.println(micros());
 
   return {};
@@ -264,17 +269,16 @@ void pathlighting()
 
   String msg;
   serializeJson(pathjson, msg);
-  Serial.println(mesh.subConnectionJson());
+  // Serial.printf(mesh.subConnectionJson());
 
   painlessmesh::protocol::NodeTree structure = mesh.asNodeTree();
-  Serial.print("Time: ");
+  Serial.print("Time_pathfinder_start: ");
   Serial.println(micros());
   Serial.print("memory: ");
   Serial.println(ESP.getFreeHeap());
   std::vector<uint32_t> light_the_path = pathfinder(structure, "", doc["to"]);
   for (auto node : light_the_path)
   {
-    Serial.println("");
     Serial.println(node);
     mesh.sendSingle(node, msg);
     delayMicroseconds(100);
