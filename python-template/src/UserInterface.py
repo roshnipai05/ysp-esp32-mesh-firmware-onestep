@@ -15,6 +15,7 @@ ROOT = os.path.dirname(        # src
 # Set up the serial connection
 
 serial_port = serial_port  # Change this to your serial port
+
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 

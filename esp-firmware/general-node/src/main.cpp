@@ -1,33 +1,27 @@
-//************************************************************
-// this is a simple example that uses the easyMesh library
-//
-// 1. blinks led once for every node on the mesh
-// 2. blink cycle repeats every BLINK_PERIOD
-// 3. sends a silly message to every node on the mesh at a random time between 1 and 5 seconds
-// 4. prints anything it receives to Serial.print
-//
-//
-//************************************************************
 #include <painlessMesh.h>
-#include <Arduino.h>
 #include <ArduinoJson.h>
-#include <painlessmesh/layout.hpp>
-
-// some gpio pin that is connected to an LED...
-// on my rig, this is 5, change to the right number of your LED.
+#include <vector>
+#include <string>
+#include <sstream>
+#include <NeoPixelBus.h>
 #ifdef LED_BUILTIN
 #define LED LED_BUILTIN
 #else
 #define LED 2
 #endif
 
-#define BLINK_PERIOD 3000  // milliseconds until cycle repeat
-#define BLINK_DURATION 100 // milliseconds LED is on for
+#define LED_PIN 10
+#define NUM_LEDS 5
 
-#define MESH_SSID "whateverYouLike"
-#define MESH_PASSWORD "somethingSneaky"
+#define BLINK_PERIOD 3000
+#define BLINK_DURATION 100
+
+#define MESH_SSID "whateverYouLike1"
+#define MESH_PASSWORD "somethingSneaky1"
 #define MESH_PORT 5555
-
+#define VERSION "1.2.1"
+DynamicJsonDocument doc(1024);
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(NUM_LEDS, LED_PIN);
 // Prototypes
 void sendMessage();
 void receivedCallback(uint32_t from, String &msg);
@@ -35,60 +29,53 @@ void newConnectionCallback(uint32_t nodeId);
 void changedConnectionCallback();
 void nodeTimeAdjustedCallback(int32_t offset);
 void delayReceivedCallback(uint32_t from, int32_t delay);
-JsonDocument getTopology();
+void displayJsonTopology();
+void lightUpLEDsSequentially();
+void lightUpLEDsOneByOne(RgbColor color, uint16_t delayTime);
+void handleReceivedMessage(const JsonDocument &doc);
+void processSerialInput();
+std::vector<uint32_t> pathfinder(const painlessmesh::protocol::NodeTree &node, const String &prefix, const uint32_t endnode);
+void pathlighting();
 
-Scheduler userScheduler; // to control your personal task
+Scheduler userScheduler;
 painlessMesh mesh;
 
 bool calc_delay = false;
 SimpleList<uint32_t> nodes;
 
-void sendMessage();                                                // Prototype
-Task taskSendMessage(TASK_SECOND * 1, TASK_FOREVER, &sendMessage); // start with a one second interval
-
-// Task to blink the number of nodes
+Task taskSendMessage(TASK_SECOND * 1, TASK_FOREVER, &sendMessage);
+// Task taskDelayer(TASK_SECOND * 0.5, TASK_FOREVER, &lightUpLEDsSequentially);
 Task blinkNoNodes;
 bool onFlag = false;
 
 void setup()
 {
   Serial.begin(115200);
-
-  pinMode(LED, OUTPUT);
-  pinMode(0, INPUT_PULLUP); // set GPIO0 as input
-
-  mesh.setDebugMsgTypes(ERROR | DEBUG); // set before init() so that you can see error messages
+  strip.Begin();
+  strip.Show();
+  Serial.printf("Starting Mesh Node... Version %s\n", VERSION);
+  mesh.setDebugMsgTypes(ERROR | DEBUG);
   mesh.setContainsRoot(true);
-  mesh.setRoot(true);
-  mesh.setHostname("Sai's Node");
   mesh.init(MESH_SSID, MESH_PASSWORD, &userScheduler, MESH_PORT);
   mesh.onReceive(&receivedCallback);
   mesh.onNewConnection(&newConnectionCallback);
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
   mesh.onNodeDelayReceived(&delayReceivedCallback);
-
+  doc["From"] = mesh.getNodeId();
   userScheduler.addTask(taskSendMessage);
-  taskSendMessage.enable();
+  // userScheduler.addTask(taskDelayer);
 
   blinkNoNodes.set(BLINK_PERIOD, (mesh.getNodeList().size() + 1) * 2, []()
                    {
-      // If on, switch off, else switch on
-      if (onFlag)
-        onFlag = false;
-      else
-        onFlag = true;
-      blinkNoNodes.delay(BLINK_DURATION);
+    onFlag = !onFlag;
+    blinkNoNodes.delay(BLINK_DURATION);
 
-      if (blinkNoNodes.isLastIteration()) {
-        // Finished blinking. Reset task for next run 
-        // blink number of nodes (including this node) times
-        blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
-        // Calculate delay based on current mesh time and BLINK_PERIOD
-        // This results in blinks between nodes being synced
-        blinkNoNodes.enableDelayed(BLINK_PERIOD - 
-            (mesh.getNodeTime() % (BLINK_PERIOD*1000))/1000);
-      } });
+    if (blinkNoNodes.isLastIteration()) {
+      blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
+      blinkNoNodes.enableDelayed(BLINK_PERIOD -
+                                 (mesh.getNodeTime() % (BLINK_PERIOD * 1000)) / 1000);
+    } });
   userScheduler.addTask(blinkNoNodes);
   blinkNoNodes.enable();
 
@@ -99,81 +86,101 @@ void loop()
 {
   mesh.update();
   digitalWrite(LED, !onFlag);
-  if (digitalRead(0) == LOW)
-  {
-    Serial.println("Node ID: ");
-    Serial.print(mesh.getNodeId());
-    Serial.println("");
-  }
+
+  processSerialInput();
 }
 
-JsonDocument getTopology()
+std::vector<String> splitString(const String &str)
 {
-  String topology_as_json_string = mesh.subConnectionJson();
-  JsonDocument topology;
-  deserializeJson(topology, topology_as_json_string);
-  return topology;
+  std::vector<String> result;
+  std::string stdStr = str.c_str();
+  std::istringstream iss(stdStr);
+  std::string word;
+
+  while (std::getline(iss, word, ' '))
+  {
+    result.push_back(String(word.c_str()));
+  }
+
+  return result;
+}
+
+void processSerialInput()
+{
+  if (Serial.available() > 0)
+  {
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+    std::vector<String> words = splitString(command);
+    words[0].toLowerCase();
+
+    if (!words.empty() && words[0] == "send")
+    {
+      unsigned long ulong = std::stoul(words[1].c_str(), nullptr, 10);
+      String cipher_text;
+      for (int i = 3; i < words.size(); i++)
+      {
+        cipher_text += words[i] + " ";
+      }
+      doc["msg"] = cipher_text;
+      doc["to"] = ulong;
+      doc["HEX"] = words[2];
+      delayMicroseconds(100);
+      taskSendMessage.enable();
+    }
+    else if (!words.empty() && words[0] == "topology")
+    {
+      displayJsonTopology();
+    }
+  }
 }
 
 void sendMessage()
 {
-  String msg = "Node  ID: ";
-  msg += mesh.getNodeId();
-  msg += " Free Memory: " + String(ESP.getFreeHeap());
+  String msg;
+  serializeJson(doc, msg);
   mesh.sendBroadcast(msg);
+  if (doc["HEX"] != "false")
+  {
+    pathlighting();
+  }
 
+  taskSendMessage.disable();
   if (calc_delay)
   {
-    SimpleList<uint32_t>::iterator node = nodes.begin();
-    while (node != nodes.end())
+    for (auto node : nodes)
     {
-      mesh.startDelayMeas(*node);
-      node++;
+      mesh.startDelayMeas(node);
     }
     calc_delay = false;
   }
 
   Serial.printf("Sending message: %s\n", msg.c_str());
-
-  taskSendMessage.setInterval(random(TASK_SECOND * 1, TASK_SECOND * 5)); // between 1 and 5 seconds
 }
 
 void receivedCallback(uint32_t from, String &msg)
 {
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+  Serial.printf("Received %s\n", msg.c_str());
+
+  DynamicJsonDocument receivedDoc(1024);
+  deserializeJson(receivedDoc, msg);
+  handleReceivedMessage(receivedDoc);
 }
 
 void newConnectionCallback(uint32_t nodeId)
 {
-  // Reset blink task
   onFlag = false;
   blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
   blinkNoNodes.enableDelayed(BLINK_PERIOD - (mesh.getNodeTime() % (BLINK_PERIOD * 1000)) / 1000);
-
-  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
-  Serial.printf("--> startHere: New Connection, %s\n", mesh.subConnectionJson(true).c_str());
 }
 
 void changedConnectionCallback()
 {
-  Serial.printf("Changed connections\n");
-  // Reset blink task
   onFlag = false;
   blinkNoNodes.setIterations((mesh.getNodeList().size() + 1) * 2);
   blinkNoNodes.enableDelayed(BLINK_PERIOD - (mesh.getNodeTime() % (BLINK_PERIOD * 1000)) / 1000);
 
   nodes = mesh.getNodeList();
-
-  Serial.printf("Num nodes: %d\n", nodes.size());
-  Serial.printf("Connection list:");
-
-  SimpleList<uint32_t>::iterator node = nodes.begin();
-  while (node != nodes.end())
-  {
-    Serial.printf(" %u", *node);
-    node++;
-  }
-  Serial.println();
   calc_delay = true;
 }
 
@@ -185,4 +192,95 @@ void nodeTimeAdjustedCallback(int32_t offset)
 void delayReceivedCallback(uint32_t from, int32_t delay)
 {
   Serial.printf("Delay to node %u is %d us\n", from, delay);
+}
+
+void displayJsonTopology()
+{
+  String topology_json = mesh.subConnectionJson(true);
+  Serial.println(topology_json);
+}
+void lightUpLEDsSequentially(String hexColorId)
+{
+  long number = strtol(&hexColorId[1], NULL, 16); // Convert hex to long
+  int r = number >> 16;                           // First 2 digits of long
+  int g = number >> 8 & 0xFF;                     // Middle 2 digits of long
+  int b = number & 0xFF;
+  lightUpLEDsOneByOne(RgbColor(r, g, b), 500); // 500ms delay between each LED lighting up
+  // delay(1000);
+
+  // Turn off all LEDs
+  lightUpLEDsOneByOne(RgbColor(0, 0, 0), 500); // 500ms delay between each LED turning off
+  // delay(1000);
+}
+
+void lightUpLEDsOneByOne(RgbColor color, uint16_t delayTime)
+{
+  for (uint16_t i = 0; i < NUM_LEDS; i++)
+  {
+    strip.SetPixelColor(i, color);
+    strip.Show();
+    delay(delayTime);
+  }
+}
+void handleReceivedMessage(const JsonDocument &doc)
+{
+  if (doc["type"] == "lit" && doc["HEX"] != "false")
+  {
+    // Serial.printf(doc["HEX"].as<String>());
+    lightUpLEDsSequentially(doc["HEX"].as<String>());
+  }
+}
+
+std::vector<uint32_t> path;
+std::vector<uint32_t> final_path;
+std::vector<uint32_t> pathfinder(const painlessmesh::protocol::NodeTree &node, const String &prefix, const uint32_t endnode)
+{
+  // Serial.printf(prefix + String(node.nodeId));
+
+  path.push_back(node.nodeId);
+  if (endnode == node.nodeId)
+  {
+    final_path = path;
+    path.clear();
+    Serial.printf("Node Found\n");
+    Serial.print("Time_pathfinder_end: ");
+    Serial.println(micros());
+    return final_path;
+  }
+  for (const auto &child : node.subs)
+  {
+    if (!pathfinder(child, prefix + "  ", endnode).empty())
+    {
+      return final_path;
+    } // Indent for children
+  }
+  path.pop_back();
+
+  Serial.printf("Time_pathfinder_end: ");
+  Serial.println(micros());
+
+  return {};
+}
+void pathlighting()
+{
+  DynamicJsonDocument pathjson(1024);
+  pathjson["type"] = "lit";
+  pathjson["HEX"] = doc["HEX"];
+
+  String msg;
+  serializeJson(pathjson, msg);
+  // Serial.printf(mesh.subConnectionJson());
+
+  painlessmesh::protocol::NodeTree structure = mesh.asNodeTree();
+  Serial.print("Time_pathfinder_start: ");
+  Serial.println(micros());
+  Serial.print("memory: ");
+  Serial.println(ESP.getFreeHeap());
+  std::vector<uint32_t> light_the_path = pathfinder(structure, "", doc["to"]);
+  for (auto node : light_the_path)
+  {
+    Serial.println(node);
+    mesh.sendSingle(node, msg);
+    delayMicroseconds(100);
+  }
 }
