@@ -4,8 +4,13 @@ import serial
 import signal
 import sys
 import time
+import os
 
 from edit import encrypt, serial_port
+
+ROOT = os.path.dirname(        # src
+        os.path.abspath(__file__)
+    )
 
 # Set up the serial connection
 
@@ -21,8 +26,12 @@ def signal_handler(ser, sig, frame):
 
 # Function to generate a random 16-character alphanumeric key
 def generate_random_string():
-    characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-    rand_string = ''.join(random.choice(characters) for _ in range(16))
+    # characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    # rand_string = ''.join(random.choice(characters) for _ in range(16))
+
+    random_words = random.sample(wordlist, 4)
+    rand_string = '-'.join(random_words)
+
     return f"Payload {rand_string}"
 
 # Function to handle receiving messages
@@ -110,13 +119,25 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(ser, sig, frame))
     signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(ser, sig, frame))
 
-    payload = generate_random_string()
-    encrypted_payload = encrypt(payload)
-    while True:
-        command = input("Enter command: ")
-        command_name = command.split(maxsplit=1)[0]
-        handler = command_handlers.get(command_name)
-        if handler:
-            handler(command)
-        else:
-            handle_unknown_command(command)
+    wordlist = []
+    try:
+        # Read the wordfile and load words into a list
+        wordlist_filepath = os.path.join(ROOT, "wordlist")
+        with open(wordlist_filepath, 'r') as file:
+            wordlist = file.read().split()
+
+        payload = generate_random_string()
+        encrypted_payload = encrypt(payload)
+        while True:
+            command = input("Enter command: ")
+            command_name = command.split(maxsplit=1)[0]
+            handler = command_handlers.get(command_name)
+            if handler:
+                handler(command)
+            else:
+                handle_unknown_command(command)
+
+    except FileNotFoundError:
+        print("Error: 'wordlist' file not found")
+    except ValueError:
+        print("Error: The word list is too short to pick 4 unique words")
