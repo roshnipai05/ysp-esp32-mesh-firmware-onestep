@@ -1,23 +1,29 @@
-import serial
-import time
-import threading
 import random
 import re
-from edit import encrypt, decrypt
-import edit
+import serial
+import signal
+import sys
+import time
+
+from edit import encrypt, serial_port
 
 # Set up the serial connection
 
-serial_port = edit.serial_port  # Change this to your serial port
+serial_port = serial_port  # Change this to your serial port
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
+def signal_handler(ser, sig, frame):
+    print("\nSignal received, stopping...")
+    ser.close()
+    sys.exit(0)
+
 
 # Function to generate a random 16-character alphanumeric key
-def generate_random_key():
-    characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    payload = ''.join(random.choice(characters) for _ in range(16))
-    return payload
+def generate_random_string():
+    characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    rand_string = ''.join(random.choice(characters) for _ in range(16))
+    return f"Payload {rand_string}"
 
 # Function to handle receiving messages
 def receive_messages(ser):
@@ -27,54 +33,42 @@ def receive_messages(ser):
             print(f"Received message: {message}")
 
 def handle_send_message(command):
-    match = re.match(r'Send (\d+) (#(?:[0-9a-fA-F]{6})|false)$', command)
+    match = re.match(r'Send (\d+) (#(?:[0-9a-fA-F]{6})|false|False)$', command)
     if not match:
-        print("Usage: Send TargetNode HexColorID \n Set HexColorID as false for No Lighting") #Send Target node Hexcolor Msg 
-    else: # 
+        print("Usage: Send TargetNode HexColorID \n Set HexColorID as false for No Lighting") #Send Target node Hexcolor Msg
+    else: #
         node_id = match.group(1)
         hex_color = match.group(2)
-        message = f"To-{node_id} Payload- {payload}"
-        message = encrypt(message)
-        
-        serial_command = f"Send {node_id} {hex_color} {message} "
+
+        serial_command = f"Send {node_id} {hex_color} {encrypted_payload}"
 
         ser.write((serial_command + '\n').encode('utf-8'))
-        print(f"Sent encrypted message to node {node_id} with color {hex_color}")
-        time.sleep(1) 
+
+        print(f"Message Sent Successfully. To: {node_id} Color: {hex_color}")
+
+        time.sleep(1)
         while ser.in_waiting > 0:
             response = ser.readline().decode('utf-8').strip()
-            response = decrypt(response)
             print(response)
-
-
 
 def handle_show_message(command):
     match = re.match(r'Show_Message ([01])$', command)
     if not match:
-        print("Usage: Show_Message 0/1")
+        print("Usage: Show_Message 0/1 (0 for the Unencrypted payload, 1 for encrypted)")
     else:
         show_message_flag = int(match.group(1))
         if show_message_flag == 0:
-            print(f"Unencrypted key: {payload}")
+            print(f"Unencrypted payload: {payload}")
         else:
-            encrypted_key = encrypt(payload)
-            print(f"Encrypted key: {encrypted_key}")
-
+            encrypted_payload = encrypt(payload)
+            print(f"Encrypted payload: {encrypted_payload}")
 
 def handle_list_nodes(command):
     ser.write("topology\n".encode('utf-8'))
-    time.sleep(1) 
+    time.sleep(1)
     while ser.in_waiting > 0:
         response = ser.readline().decode('utf-8').strip()
         print(response)
-
-def handle_debug_mode(command):
-    print("Entering Debug Mode. Type 'exit' to leave Debug Mode.")
-    while True:
-        debug_command = input("Debug> ")
-        if debug_command.lower() == "exit":
-            break
-        ser.write((debug_command + '\n').encode('utf-8'))
 
 def handle_list_colors(command):
     colors = {
@@ -91,6 +85,14 @@ def handle_list_colors(command):
     for color, code in colors.items():
         print(f"{color}: {code}")
 
+def handle_debug_mode(command):
+    print("Entering Debug Mode. Type 'exit' to leave Debug Mode.")
+    while True:
+        debug_command = input("Debug> ")
+        if debug_command.lower() == "exit":
+            break
+        ser.write((debug_command + '\n').encode('utf-8'))
+
 def handle_unknown_command(command):
     print("Unknown command. Available commands: Send, Show_Message, List_Nodes, List_Colors")
 
@@ -102,11 +104,14 @@ command_handlers = {
     "List_Colors": handle_list_colors
 }
 
-
-
 # Main command-line interface
-try:
-    payload = generate_random_key()
+if __name__ == "__main__":
+    # Register signal handlers
+    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(ser, sig, frame))
+    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(ser, sig, frame))
+
+    payload = generate_random_string()
+    encrypted_payload = encrypt(payload)
     while True:
         command = input("Enter command: ")
         command_name = command.split(maxsplit=1)[0]
@@ -115,7 +120,3 @@ try:
             handler(command)
         else:
             handle_unknown_command(command)
-except KeyboardInterrupt:
-    print("Program interrupted")
-finally:
-    ser.close()
