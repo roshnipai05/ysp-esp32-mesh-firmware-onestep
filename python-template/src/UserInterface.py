@@ -1,23 +1,39 @@
-import serial
-import time
-import threading
 import random
 import re
-from edit import caesar_cipher_encrypt, caesar_cipher_decrypt
+import serial
+import signal
+import sys
+import time
+import os
+
+from edit import encrypt, serial_port
+
+ROOT = os.path.dirname(        # src
+        os.path.abspath(__file__)
+    )
 
 # Set up the serial connection
-serial_port = 'COM16'  # Change this to your serial port
-# serial_port = '/dev/cu.usbmodem101'  # Use this on MacOS
+
+serial_port = serial_port  # Change this to your serial port
 
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
+def signal_handler(ser, sig, frame):
+    print("\nSignal received, stopping...")
+    ser.close()
+    sys.exit(0)
+
 
 # Function to generate a random 16-character alphanumeric key
-def generate_random_key():
-    characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    key = ''.join(random.choice(characters) for _ in range(16))
-    return key
+def generate_random_string():
+    # characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    # rand_string = ''.join(random.choice(characters) for _ in range(16))
+
+    random_words = random.sample(wordlist, 4)
+    rand_string = '-'.join(random_words)
+
+    return f"Payload {rand_string}"
 
 # Function to handle receiving messages
 def receive_messages(ser):
@@ -27,52 +43,42 @@ def receive_messages(ser):
             print(f"Received message: {message}")
 
 def handle_send_message(command):
-    match = re.match(r'Send (\d+) (#(?:[0-9a-fA-F]{6})|false)$', command)
+    match = re.match(r'Send (\d+) (#(?:[0-9a-fA-F]{6})|false|False)$', command)
     if not match:
-        print("Usage: Send TargetNode HexColorID \n Set HexColorID as false for No Lighting") #Send Target node Hexcolor Msg 
-    else: # 
+        print("Usage: Send TargetNode HexColorID \n Set HexColorID as false for No Lighting") #Send Target node Hexcolor Msg
+    else: #
         node_id = match.group(1)
         hex_color = match.group(2)
-        message = f"from: User  to:{node_id} {key}"
 
-        full_message = f"Send {node_id} {hex_color} {message} "
+        serial_command = f"Send {node_id} {hex_color} {encrypted_payload}"
 
-        ser.write((full_message + '\n').encode('utf-8'))
-        print(f"Sent encrypted message to node {node_id} with color {hex_color}")
-        time.sleep(1) 
+        ser.write((serial_command + '\n').encode('utf-8'))
+
+        print(f"Message Sent Successfully. To: {node_id} Color: {hex_color}")
+
+        time.sleep(1)
         while ser.in_waiting > 0:
             response = ser.readline().decode('utf-8').strip()
             print(response)
 
-
-
 def handle_show_message(command):
     match = re.match(r'Show_Message ([01])$', command)
     if not match:
-        print("Usage: Show_Message 0/1")
+        print("Usage: Show_Message 0/1 (0 for the Unencrypted payload, 1 for encrypted)")
     else:
         show_message_flag = int(match.group(1))
         if show_message_flag == 0:
-            print(f"Unencrypted key: {key}")
+            print(f"Unencrypted payload: {payload}")
         else:
-            encrypted_key = caesar_cipher_encrypt(key)
-            print(f"Encrypted key: {encrypted_key}")
-
+            encrypted_payload = encrypt(payload)
+            print(f"Encrypted payload: {encrypted_payload}")
 
 def handle_list_nodes(command):
     ser.write("topology\n".encode('utf-8'))
-    time.sleep(1) 
+    time.sleep(1)
     while ser.in_waiting > 0:
         response = ser.readline().decode('utf-8').strip()
         print(response)
-
-def handle_debug_mode(command):
-    print("Entering Debug Mode. Type 'exit' to leave Debug Mode.")
-    while True:
-        debug_command = input("Debug> ")
-        if debug_command.lower() == "exit":
-            break
-        ser.write((debug_command + '\n').encode('utf-8'))
 
 def handle_list_colors(command):
     colors = {
@@ -89,31 +95,50 @@ def handle_list_colors(command):
     for color, code in colors.items():
         print(f"{color}: {code}")
 
+def handle_debug_mode(command):
+    print("Entering Debug Mode. Type 'exit' to leave Debug Mode.")
+    while True:
+        debug_command = input("Debug> ")
+        if debug_command.lower() == "exit":
+            break
+        ser.write((debug_command + '\n').encode('utf-8'))
+
 def handle_unknown_command(command):
-    print("Unknown command. Available commands: Send, ShowMessage, List_Nodes, List_Colors")
+    print("Unknown command. Available commands: Send, Show_Message, List_Nodes, List_Colors")
 
 command_handlers = {
     "Send": handle_send_message,
-    "ShowMessage": handle_show_message,
+    "Show_Message": handle_show_message,
     "List_Nodes": handle_list_nodes,
     "DebugMode": handle_debug_mode,
     "List_Colors": handle_list_colors
 }
 
-
-
 # Main command-line interface
-try:
-    key = generate_random_key()
-    while True:
-        command = input("Enter command: ")
-        command_name = command.split(maxsplit=1)[0]
-        handler = command_handlers.get(command_name)
-        if handler:
-            handler(command)
-        else:
-            handle_unknown_command(command)
-except KeyboardInterrupt:
-    print("Program interrupted")
-finally:
-    ser.close()
+if __name__ == "__main__":
+    # Register signal handlers
+    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(ser, sig, frame))
+    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(ser, sig, frame))
+
+    wordlist = []
+    try:
+        # Read the wordfile and load words into a list
+        wordlist_filepath = os.path.join(ROOT, "wordlist")
+        with open(wordlist_filepath, 'r') as file:
+            wordlist = file.read().split()
+
+        payload = generate_random_string()
+        encrypted_payload = encrypt(payload)
+        while True:
+            command = input("Enter command: ")
+            command_name = command.split(maxsplit=1)[0]
+            handler = command_handlers.get(command_name)
+            if handler:
+                handler(command)
+            else:
+                handle_unknown_command(command)
+
+    except FileNotFoundError:
+        print("Error: 'wordlist' file not found")
+    except ValueError:
+        print("Error: The word list is too short to pick 4 unique words")
