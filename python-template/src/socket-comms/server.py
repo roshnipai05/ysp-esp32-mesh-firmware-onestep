@@ -6,15 +6,14 @@ import serial
 import signal
 import sys
 
-serial_port = '/dev/cu.usbmodem1301'
+serial_port = '/dev/cu.usbmodem11301'
 
 EXIT_COMMAND = 'exit'
 
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
-def serial_interface(cmd_queue: queue.Queue):
-    # BUG: currently closing port inside the loop. Errors out on sigint
+def serial_interface(cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
     try:
         while True:
@@ -29,11 +28,13 @@ def serial_interface(cmd_queue: queue.Queue):
                     break
                 cmd_str += '\n'
                 ser.write(cmd_str.encode('utf-8'))
+            # if signal handler requested a shutdown, break out of loop
+            if shutdown_event.is_set():
+                break
 
             # hacky, unsure why. Taken from: ElectricRCAircraftGuy/eRCaGuy_PyTerm `serial_terminal.py`
             time.sleep(0.01)
         print('[ser] End')
-        # TODO: use a shutdown global Event() to terminate from signal handler
     except serial.SerialException as e:
         print(f"[ser] Serial error: {e}")
 
@@ -80,19 +81,25 @@ def main():
     # IMP: there are no locks. Make sure we are dealing with only one Queue.
     client_cmd_queue = queue.Queue()
 
-    serial_thread = threading.Thread(target=serial_interface, args=(client_cmd_queue,))
+    # event channel to signal shutdown across threads safely
+    shutdown_event = threading.Event()
+
+    serial_thread = threading.Thread(target=serial_interface, args=(client_cmd_queue, shutdown_event))
     serial_thread.start()
 
     def signal_handler(server, sig, frame):
         print('\nShutting down...')
+        shutdown_event.set()
+        # wait for serial monitor to exit once `shutdown_event` is set
+        serial_thread.join()
+
+        # free serial object and shut down socket server before exit
         ser.close()
         server.close()
         sys.exit(0)
 
     init_server(signal_handler, client_cmd_queue)
 
-    # wait for serial monitor to finish reading after server quits
-    serial_thread.join()
 if __name__ == '__main__':
     main()
 
