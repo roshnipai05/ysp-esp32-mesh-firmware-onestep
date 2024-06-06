@@ -48,7 +48,7 @@ class ESPController:
         self._serialNumber: str = ''
         self._connectedDevice: str = ''
         self._nodeID: int = 0
-        self._allowedDevices: set[int] = {0}
+        self._allowedDevices: dict[int, int] = {}
         self.controller: serial.Serial | None = self.__connect()
         self.__initSuccess()
 
@@ -153,7 +153,7 @@ class ESPController:
             '''
             try:
                 nodeID: int = self.__calculateNodeID(device.serial_number)  # type: ignore
-            except ValueError:
+            except IndexError:
                 print(f"Invalid Serial Number: {device.serial_number}")
                 return None
             if nodeID in self._allowedDevices:
@@ -171,7 +171,12 @@ class ESPController:
             case DeviceIdentifierType.FROM_LIST:
                 self._allowedDevices = AllowedDevicesNodeIDs
                 for device in serialDevices:
-                    return __connectDeviceFromList(device)
+                    # handle 'None' serial numbers; only allow potential MAC addresses
+                    if device.serial_number and ':' in device.serial_number:
+                        _returnedDevice: serial.Serial | None = __connectDeviceFromList(device)
+                        if not _returnedDevice:
+                            continue
+                        return _returnedDevice
             case DeviceIdentifierType.AUTO_DETECT:
                 if len(serialDevices) > 1:
                     print("Multiple serial devices found")
