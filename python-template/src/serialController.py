@@ -48,6 +48,7 @@ class ESPController:
         self._serialNumber: str = ''
         self._connectedDevice: str = ''
         self._nodeID: int = 0
+        self._hardwareID: int = 0
         self._allowedDevices: dict[int, int] = {}
         self.controller: serial.Serial | None = self.__connect()
         self.__initSuccess()
@@ -96,6 +97,14 @@ class ESPController:
     @nodeID.setter
     def nodeID(self, value: int) -> None:
         self._nodeID = value
+
+    @property
+    def hardwareID(self) -> int:
+        return self._hardwareID
+    
+    @hardwareID.setter
+    def hardwareID(self, value: int) -> None:
+        self._hardwareID = value
 
     def __calculateNodeID(self, serialNumber: str) -> int:
         """
@@ -158,6 +167,7 @@ class ESPController:
                 return None
             if nodeID in self._allowedDevices:
                 self.nodeID = nodeID
+                self.hardwareID = self._allowedDevices[nodeID]
                 return __connectDevice(device)
             else:
                 print(f"Device with {device.serial_number = }, {nodeID = } not allowed")
@@ -198,8 +208,11 @@ class ESPController:
         '''
         Private method to print success message after initialization
         '''
-        print(f"ESP Connected: {self.controllerConnected} at {self.controllerPort}")
-        print(f"Serial Number: {self.serialNumber}, Node ID: {self.nodeID}")
+        if self.controllerConnected:
+            print(f"ESP Connected: {self.controllerConnected}, at port: {self.controllerPort}")
+            print(f"Serial Number: {self.serialNumber}, Node ID: {self.nodeID}, Hardware ID: {self.hardwareID}")
+        else:
+            print("No suitable ESP found to connect to.")
 
 
 if __name__ == '__main__':
