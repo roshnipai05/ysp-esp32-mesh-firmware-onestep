@@ -22,6 +22,9 @@ def trigger_exit():
 def self_identifier(id):
     print(f"[server] My Node ID: {id}")
 
+def topology_export_handler(controller):
+    pass
+
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
     try:
@@ -39,6 +42,9 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
                 if cmd_str == 'mirror-mirror':
                     self_identifier(node.nodeID)
 
+                # update current network topology json dump
+                if cmd_str == 'capture-topology':
+                    topology_export_handler(node)
                 node.push(cmd_str)
                 # cmd_str += '\n'
                 # ser.write(cmd_str.encode('utf-8'))

@@ -110,12 +110,23 @@ def nodeid_cmd_handler(args):
         log.warning(e)
         log.info('Usage: `print_my_nodeid`')
 
+def export_topology_cmd_handler(args):
+    try:
+        if len(args) != 0:
+            raise ValueError('Incorrect use of `export_topology_cmd_handler` command')
+        print('Current topology will be saved to `src/topology.json`')
+        send_data('capture-topology')
+    except ValueError as e:
+        log.warning(e)
+        log.info('Usage: `export_topology_cmd_handler`')
+
 def help_cmd_handler(args):
     print('Available Commands:')
     print('  get_topology           - Retrieve network topology')
     print('  ping_node [hw index] [color hex OR `false`] - Send a ping to a node with optional color')
     print('  print_my_nodeid        - Display the node ID of the development board connected to your device')
     print('  print_payload          - Print the encrypted and plaintext payload sent in the previous `ping_node`')
+    print('  export_topology        - Retrieve and save the current network topology to a JSON file `src/topology.json`')
     print('  help                   - Display this help message')
     print('  exit                   - Exit the command interface')
 
@@ -124,6 +135,7 @@ command_handlers = {
     'ping_node': ping_cmd_handler,
     'print_my_nodeid': nodeid_cmd_handler,
     'print_payload': payload_cmd_handler,
+    'export_topology': export_topology_cmd_handler,
     'help': help_cmd_handler
 }
 
