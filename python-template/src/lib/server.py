@@ -7,35 +7,40 @@ import serial
 import signal
 import sys
 
-serial_port = '/dev/cu.usbmodem323101'
+from serialController import ESPController, HWNode
 
 EXIT_COMMAND = 'exit'
 
-baud_rate = 115200
-ser = serial.Serial(serial_port, baud_rate)
+# serial_port = '/dev/cu.usbmodem1301'
+# baud_rate = 115200
+# ser = serial.Serial(serial_port, baud_rate)
 
 def trigger_exit():
     # invoke SIGINT when user enters 'exit'. Signal handler will take care of cleanup.
     os.kill(os.getpid(), signal.SIGINT)
 
-def serial_interface(cmd_queue: queue.Queue, shutdown_event: threading.Event):
+def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
     try:
         # if signal handler requested a shutdown, break out of loop
         while not shutdown_event.is_set():
-            if ser.in_waiting > 0:
-                read_data = ser.read(ser.in_waiting).decode('utf-8')
+            # if ser.in_waiting > 0:
+            #     read_data = ser.read(ser.in_waiting).decode('utf-8')
+            read_data = node.pull()
+            if read_data:
                 print(f"[serial] Received:\n{read_data}")
             if cmd_queue.qsize() > 0:
                 cmd_str = cmd_queue.get()
-                cmd_str += '\n'
-                ser.write(cmd_str.encode('utf-8'))
+                node.push(cmd_str)
+                # cmd_str += '\n'
+                # ser.write(cmd_str.encode('utf-8'))
             time.sleep(0.5)
     except serial.SerialException as e:
         print(f"[serial] Serial error: {e}")
     finally:
         print('[serial] Closing serial monitor')
-        ser.close()
+        node.disconnectESP()
+        # ser.close()
 
 
 def client_handler(conn, addr, cmd_queue):
@@ -83,6 +88,7 @@ def init_server(signal_handler, input_queue):
         server_socket.close()
 
 def main():
+    global HWNode
     # client commands queue
     # IMP: there are no locks. Make sure we are dealing with only one Queue.
     client_cmd_queue = queue.Queue()
@@ -90,7 +96,7 @@ def main():
     # event channel to signal shutdown across threads safely
     shutdown_event = threading.Event()
 
-    serial_thread = threading.Thread(target=serial_interface, args=(client_cmd_queue, shutdown_event))
+    serial_thread = threading.Thread(target=serial_interface, args=(HWNode, client_cmd_queue, shutdown_event))
     serial_thread.start()
 
     def signal_handler(server, sig, frame):

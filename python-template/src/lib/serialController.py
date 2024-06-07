@@ -249,6 +249,9 @@ class ESPController:
             self.controller.close()  # type: ignore
 
 
+# Instantiate an object and make it available for export
+HWNode = ESPController(identifierType=DeviceIdentifierType.FROM_LIST)
+
 if __name__ == '__main__':
     # print(ESPController.listConnectedDevices())
     test = ESPController(identifierType=DeviceIdentifierType.FROM_LIST)
