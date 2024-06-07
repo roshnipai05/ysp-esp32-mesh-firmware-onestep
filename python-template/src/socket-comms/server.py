@@ -24,15 +24,13 @@ def serial_interface(cmd_queue: queue.Queue, shutdown_event: threading.Event):
         # if signal handler requested a shutdown, break out of loop
         while not shutdown_event.is_set():
             if ser.in_waiting > 0:
-                read_data = ser.readline().decode('utf-8')
-                print("[serial] Received:\n", read_data)
+                read_data = ser.read(ser.in_waiting).decode('utf-8')
+                print(f"[serial] Received:\n{read_data}")
             if cmd_queue.qsize() > 0:
                 cmd_str = cmd_queue.get()
                 cmd_str += '\n'
                 ser.write(cmd_str.encode('utf-8'))
-
-            # hacky, unsure why. Taken from: ElectricRCAircraftGuy/eRCaGuy_PyTerm `serial_terminal.py`
-            time.sleep(0.01)
+            time.sleep(0.5)
     except serial.SerialException as e:
         print(f"[serial] Serial error: {e}")
     finally:
