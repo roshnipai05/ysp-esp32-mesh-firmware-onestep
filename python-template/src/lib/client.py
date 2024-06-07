@@ -6,7 +6,16 @@ import sys
 
 from logger import get_logger, pprint
 
+LIB_DIR = os.path.dirname( os.path.abspath(__file__) )
+SRC_DIR = os.path.dirname(LIB_DIR)
+
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
+
+from edit import encrypt
+
 log = get_logger()
+wordlist = list()
 
 def trigger_exit():
     os.kill(os.getpid(), signal.SIGINT)
@@ -114,6 +123,12 @@ def main():
 
     log.info('Command Interface initiated. Press CTRL+C or type "exit" to exit.')
     try:
+        # Read the wordfile and load words into a list
+        wordlist_filepath = os.path.join(LIB_DIR, 'wordlist')
+        with open(wordlist_filepath, 'r') as file:
+            global wordlist
+            wordlist = file.read().split()
+
         while True:
             pprint('\nEnter a command\n> ', '')
             usr_input = base_string_validator(input())
@@ -121,6 +136,8 @@ def main():
                 trigger_exit()
                 break
             usr_input_handler(usr_input)
+    except FileNotFoundError:
+        log.error('File `wordlist` not found in `src/lib/`')
     finally:
         log.info('Closing Command Interface')
 
