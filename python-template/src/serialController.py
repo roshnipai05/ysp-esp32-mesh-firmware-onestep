@@ -61,15 +61,15 @@ class ESPController:
     @property
     def controllerPort(self) -> str:
         return self._controllerPort
-    
+
     @controllerPort.setter
     def controllerPort(self, value: str) -> None:
-        self._controllerPort = value  
-    
+        self._controllerPort = value
+
     @property
     def serialNumber(self) -> str:
         return self._serialNumber
-    
+
     @serialNumber.setter
     def serialNumber(self, value: str) -> None:
         self._serialNumber = value
@@ -85,7 +85,7 @@ class ESPController:
     @property
     def connectedDevice(self) -> str:
         return self._connectedDevice
-    
+
     @connectedDevice.setter
     def connectedDevice(self, value: str) -> None:
         self._connectedDevice = value
@@ -93,7 +93,7 @@ class ESPController:
     @property
     def nodeID(self) -> int:
         return self._nodeID
-    
+
     @nodeID.setter
     def nodeID(self, value: int) -> None:
         self._nodeID = value
@@ -101,7 +101,7 @@ class ESPController:
     @property
     def hardwareIndex(self) -> int:
         return self._hardwareIndex
-    
+
     @hardwareIndex.setter
     def hardwareIndex(self, value: int) -> None:
         self._hardwareIndex = value
@@ -153,7 +153,7 @@ class ESPController:
             self.controllerPort = controller.port   # type: ignore
             self.serialNumber = device.serial_number    # type: ignore
             return controller
-        
+
         def __connectDeviceFromList(device: list_ports_common.ListPortInfo) -> serial.Serial | None:
             '''
             Private method to check if device is in allowed list and connect to it
@@ -203,7 +203,7 @@ class ESPController:
                     if device.serial_number == self.identifierString:
                         return __connectDevice(device)
         return None
-    
+
     def __initSuccess(self) -> None:
         '''
         Private method to print success message after initialization
@@ -236,11 +236,11 @@ class ESPController:
             print("Controller not connected")
         try:
             if self.controller.in_waiting > 0:  # type: ignore
-                return self.controller.readline().decode()  # type: ignore
+                return self.controller.read(self.controller.in_waiting).decode()  # type: ignore
         except serial.SerialException as e:
             print(f"Error receiving data from {self.controllerPort}: {e}")
         return ''
-    
+
     def disconnectESP(self) -> None:
         '''
         Close the serial connection
