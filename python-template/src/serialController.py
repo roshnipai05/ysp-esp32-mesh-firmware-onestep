@@ -221,7 +221,10 @@ class ESPController:
         '''
         if not self.controllerConnected:
             print("Controller not connected")
-        self.controller.write(command.encode()) # type: ignore
+        try:
+            self.controller.write(command.encode()) # type: ignore
+        except serial.SerialException as e:
+            print(f"Error sending command: {command} to {self.controllerPort}: {e}")
 
 
     def pull(self) -> str:
@@ -231,8 +234,11 @@ class ESPController:
         '''
         if not self.controllerConnected:
             print("Controller not connected")
-        if self.controller.in_waiting > 0:  # type: ignore
-            return self.controller.readline().decode()  # type: ignore
+        try:
+            if self.controller.in_waiting > 0:  # type: ignore
+                return self.controller.readline().decode()  # type: ignore
+        except serial.SerialException as e:
+            print(f"Error receiving data from {self.controllerPort}: {e}")
         return ''
 
 
