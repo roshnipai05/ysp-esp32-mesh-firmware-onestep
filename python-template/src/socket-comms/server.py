@@ -1,3 +1,4 @@
+import os
 import queue
 import socket
 import threading
@@ -6,38 +7,38 @@ import serial
 import signal
 import sys
 
-serial_port = '/dev/cu.usbmodem11301'
+serial_port = '/dev/cu.usbmodem323101'
 
 EXIT_COMMAND = 'exit'
 
 baud_rate = 115200
 ser = serial.Serial(serial_port, baud_rate)
 
+def trigger_exit():
+    # invoke SIGINT when user enters 'exit'. Signal handler will take care of cleanup.
+    os.kill(os.getpid(), signal.SIGINT)
+
 def serial_interface(cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
     try:
-        while True:
+        # if signal handler requested a shutdown, break out of loop
+        while not shutdown_event.is_set():
             if ser.in_waiting > 0:
-                read_data = ser.read(ser.in_waiting).decode('utf-8')
-                print("[ser] Received:", read_data)
+                read_data = ser.readline().decode('utf-8')
+                print("[serial] Received:\n", read_data)
             if cmd_queue.qsize() > 0:
                 cmd_str = cmd_queue.get()
-
-                if cmd_str == EXIT_COMMAND:
-                    print('[ser] Exiting serial monitor')
-                    # TODO: does this close ser properly? is signal invoked?
-                    break
                 cmd_str += '\n'
                 ser.write(cmd_str.encode('utf-8'))
-            # if signal handler requested a shutdown, break out of loop
-            if shutdown_event.is_set():
-                break
 
             # hacky, unsure why. Taken from: ElectricRCAircraftGuy/eRCaGuy_PyTerm `serial_terminal.py`
             time.sleep(0.01)
-        print('[ser] End')
     except serial.SerialException as e:
-        print(f"[ser] Serial error: {e}")
+        print(f"[serial] Serial error: {e}")
+    finally:
+        print('[serial] Closing serial monitor')
+        ser.close()
+
 
 def client_handler(conn, addr, cmd_queue):
     # IMP: *only* writes to Queue
@@ -48,6 +49,11 @@ def client_handler(conn, addr, cmd_queue):
             data = conn.recv(1024)
             if not data:
                 break
+            # only parse to check for exit command to start exit immediately
+            if data.decode() == EXIT_COMMAND:
+                trigger_exit()
+                break
+
             print(f"[server] Sending command: {data.decode()}")
             cmd_queue.put(data.decode())
     except ConnectionResetError:
@@ -75,6 +81,7 @@ def init_server(signal_handler, input_queue):
             client_thread.daemon = True    # background daemon, easy exit handling
             client_thread.start()
     finally:
+        print('[server] Closing server')
         server_socket.close()
 
 def main():
@@ -89,14 +96,12 @@ def main():
     serial_thread.start()
 
     def signal_handler(server, sig, frame):
-        print('\nShutting down...')
+        print('\n[housekeeping] Initiating shutdown...')
         shutdown_event.set()
+
         # wait for serial monitor to exit once `shutdown_event` is set
         serial_thread.join()
-
-        # free serial object and shut down socket server before exit
-        ser.close()
-        server.close()
+        # serial and server threads will free their objects on exit
         sys.exit(0)
 
     init_server(signal_handler, client_cmd_queue)
