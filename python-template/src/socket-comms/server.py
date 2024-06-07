@@ -25,6 +25,7 @@ def serial_interface(cmd_queue: queue.Queue, shutdown_event: threading.Event):
 
                 if cmd_str == EXIT_COMMAND:
                     print('[ser] Exiting serial monitor')
+                    # TODO: does this close ser properly? is signal invoked?
                     break
                 cmd_str += '\n'
                 ser.write(cmd_str.encode('utf-8'))
