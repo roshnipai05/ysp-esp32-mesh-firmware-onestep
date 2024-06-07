@@ -82,24 +82,36 @@ def ping_cmd_handler(args):
         else:
             # generate message and send
             global payload, encrypted_payload
-            payload = ' '.join(random.sample(wordlist, 5))
+            payload = ''.join(random.sample(wordlist, 5))
             encrypted_payload = encrypt(payload)
             send_data(f"ping {hw_index} {colour} {encrypted_payload}")
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `ping_node [hw index] [color hex OR \'false\']`')
 
+def payload_cmd_handler(args):
+    try:
+        if len(args) != 0:
+            raise ValueError('Incorrect use of `print_payload` command')
+        print('Payload used for the previous `ping_node` command\nNote: Encrypted payload is sent to the pinged node\n')
+        print(f"Unencrypted payload: {payload}")
+        print(f"Encrypted payload: {encrypted_payload}")
+    except ValueError as e:
+        log.warning(e)
+        log.info('Usage: `print_payload`')
 
 def help_cmd_handler(args):
     print('Available Commands:')
     print('  get_topology           - Retrieve network topology')
     print('  ping_node [hw index] [color hex OR `false`] - Send a ping to a node with optional color')
+    print('  print_payload          - Print the encrypted and plaintext payload sent in the previous `ping_node`')
     print('  help                   - Display this help message')
     print('  exit                   - Exit the command interface')
 
 command_handlers = {
     'get_topology': topology_cmd_handler,
     'ping_node': ping_cmd_handler,
+    'print_payload': payload_cmd_handler,
     'help': help_cmd_handler
 }
 
