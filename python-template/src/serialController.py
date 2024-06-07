@@ -240,6 +240,13 @@ class ESPController:
         except serial.SerialException as e:
             print(f"Error receiving data from {self.controllerPort}: {e}")
         return ''
+    
+    def disconnectESP(self) -> None:
+        '''
+        Close the serial connection
+        '''
+        if self.controllerConnected:
+            self.controller.close()  # type: ignore
 
 
 if __name__ == '__main__':
