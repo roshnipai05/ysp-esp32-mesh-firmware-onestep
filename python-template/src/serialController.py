@@ -146,7 +146,7 @@ class ESPController:
             @param device: list_ports_common.ListPortInfo - Device to connect to
             @return: serial.Serial | None - Serial object if controller connected, None otherwise
             '''
-            controller = serial.Serial(device.device, self.baudrate, timeout=self.timeout)
+            controller: serial.Serial = serial.Serial(device.device, self.baudrate, timeout=self.timeout)
             time.sleep(self.waitTime)
             self.connectedDevice = device.device
             self.controllerConnected = True
@@ -213,6 +213,27 @@ class ESPController:
             print(f"Serial Number: {self.serialNumber}, Node ID: {self.nodeID}, Hardware ID: {self.hardwareID}")
         else:
             print("No suitable ESP found to connect to.")
+
+    def push(self, command: str) -> None:
+        '''
+        Push a command to the ESP
+        @param command: str - Command to send to the ESP
+        '''
+        if not self.controllerConnected:
+            print("Controller not connected")
+        self.controller.write(command.encode()) # type: ignore
+
+
+    def pull(self) -> str:
+        '''
+        Pull data from the ESP
+        @return: str - Data received from the ESP (Only one line at a time). Returns empty string if no data available
+        '''
+        if not self.controllerConnected:
+            print("Controller not connected")
+        if self.controller.in_waiting > 0:  # type: ignore
+            return self.controller.readline().decode()  # type: ignore
+        return ''
 
 
 if __name__ == '__main__':
