@@ -1,4 +1,5 @@
 import os
+import random
 import re
 import signal
 import socket
@@ -16,6 +17,8 @@ from edit import encrypt
 
 log = get_logger()
 wordlist = list()
+payload = ''
+encrypted_payload = ''
 
 def trigger_exit():
     os.kill(os.getpid(), signal.SIGINT)
@@ -77,7 +80,11 @@ def ping_cmd_handler(args):
         if not colour_validator(colour):
             raise ValueError('[color hex] needs to be a hex value (like `#ff0000`) or the word `false`')
         else:
-            print(f"ping {hw_index} {colour}")
+            # generate message and send
+            global payload, encrypted_payload
+            payload = ' '.join(random.sample(wordlist, 5))
+            encrypted_payload = encrypt(payload)
+            send_data(f"ping {hw_index} {colour} {encrypted_payload}")
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `ping_node [hw index] [color hex OR \'false\']`')
