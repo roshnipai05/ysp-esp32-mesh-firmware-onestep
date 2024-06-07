@@ -216,13 +216,13 @@ class ESPController:
 
     def push(self, command: str) -> None:
         '''
-        Push a command to the ESP
+        Push a command to the ESP after appendiong a newline character
         @param command: str - Command to send to the ESP
         '''
         if not self.controllerConnected:
             print("Controller not connected")
         try:
-            self.controller.write(command.encode()) # type: ignore
+            self.controller.write((command + '\n').encode()) # type: ignore
         except serial.SerialException as e:
             print(f"Error sending command: {command} to {self.controllerPort}: {e}")
 
