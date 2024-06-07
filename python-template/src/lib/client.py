@@ -100,10 +100,21 @@ def payload_cmd_handler(args):
         log.warning(e)
         log.info('Usage: `print_payload`')
 
+def nodeid_cmd_handler(args):
+    try:
+        if len(args) != 0:
+            raise ValueError('Incorrect use of `print_my_nodeid` command')
+        print("Your development board's Node ID will be printed on the Serial Monitor now")
+        send_data('mirror-mirror')
+    except ValueError as e:
+        log.warning(e)
+        log.info('Usage: `print_my_nodeid`')
+
 def help_cmd_handler(args):
     print('Available Commands:')
     print('  get_topology           - Retrieve network topology')
     print('  ping_node [hw index] [color hex OR `false`] - Send a ping to a node with optional color')
+    print('  print_my_nodeid        - Display the node ID of the development board connected to your device')
     print('  print_payload          - Print the encrypted and plaintext payload sent in the previous `ping_node`')
     print('  help                   - Display this help message')
     print('  exit                   - Exit the command interface')
@@ -111,6 +122,7 @@ def help_cmd_handler(args):
 command_handlers = {
     'get_topology': topology_cmd_handler,
     'ping_node': ping_cmd_handler,
+    'print_my_nodeid': nodeid_cmd_handler,
     'print_payload': payload_cmd_handler,
     'help': help_cmd_handler
 }

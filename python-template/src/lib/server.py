@@ -19,6 +19,9 @@ def trigger_exit():
     # invoke SIGINT when user enters 'exit'. Signal handler will take care of cleanup.
     os.kill(os.getpid(), signal.SIGINT)
 
+def self_identifier(id):
+    print(f"[server] My Node ID: {id}")
+
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
     try:
@@ -31,6 +34,11 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
                 print(f"[serial] Received:\n{read_data}")
             if cmd_queue.qsize() > 0:
                 cmd_str = cmd_queue.get()
+
+                # connected board's nodeID, no serial call
+                if cmd_str == 'mirror-mirror':
+                    self_identifier(node.nodeID)
+
                 node.push(cmd_str)
                 # cmd_str += '\n'
                 # ser.write(cmd_str.encode('utf-8'))
