@@ -12,7 +12,8 @@ def trigger_exit():
     os.kill(os.getpid(), signal.SIGINT)
 
 def signal_handler(sig, frame):
-    print('\nInitiating interface shutdown...')
+    print('\n')
+    log.info('Initiating interface shutdown...')
 
     # init server exit before shutting down
     send_data('exit')
@@ -26,7 +27,7 @@ def check_server_availability(host, port):
             s.close()
         return True
     except socket.error as e:
-        # print(f"Server not available: {e}")
+        # log.error(f"Server not available: {e}")
         return False
 
 def send_data(data, host='127.0.0.1', port=65432):
@@ -35,7 +36,7 @@ def send_data(data, host='127.0.0.1', port=65432):
             s.connect((host, port))
             s.sendall(data.encode())
     except ConnectionError as e:
-        print(f"Connection failed: {e}")
+        log.error(f"Connection failed: {e}")
 
 def colour_validator(colour):
     # IMP: `colour` should be all lowercase
@@ -107,11 +108,11 @@ def main():
     signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(sig, frame))
 
     if not check_server_availability(host, port):
-        print('Server must be running before client starts.')
-        print('Run `python server.py` in a different terminal before running this script.')
+        log.error('Server must be running before client starts.')
+        log.info('Run `python server.py` in a different terminal before running this script.')
         sys.exit(1)
 
-    print('Command Interface initiated. Press CTRL+C or type "exit" to exit.')
+    log.info('Command Interface initiated. Press CTRL+C or type "exit" to exit.')
     try:
         while True:
             pprint('\nEnter a command\n> ', '')
@@ -121,7 +122,7 @@ def main():
                 break
             usr_input_handler(usr_input)
     finally:
-        print('Closing command interface')
+        log.info('Closing Command Interface')
 
 if __name__ == '__main__':
     main()
