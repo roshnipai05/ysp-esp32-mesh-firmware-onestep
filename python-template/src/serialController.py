@@ -22,9 +22,9 @@ class DeviceIdentifierType(Enum):
 class ESPController:
     """
     ESP Controller connection and communication class
-    @param identifierType: DeviceIdentifierType - Type of identifier to use for device identification (default: DeviceIdentifierType.AUTO_DETECT) [PORT, SERIAL_NUMBER, AUTO_DETECT, FROM_LIST]
+    @param identifierType: DeviceIdentifierType - Type of identifier to use for device identification (default: DeviceIdentifierType.FROM_LIST) [PORT, SERIAL_NUMBER, AUTO_DETECT, FROM_LIST]
     @param identifierString: str - Identifier string to use for device identification (default: '') [PORT, SERIAL_NUMBER]
-    @param baudrate: int - Baudrate to use for serial communication (default: 9600)
+    @param baudrate: int - Baudrate to use for serial communication (default: 115200)
     @param timeout: int - Timeout for serial communication (default: 0)
     @param waitTime: int - Wait time for controller to initialize in seconds (default: 2s)
     """
@@ -32,9 +32,9 @@ class ESPController:
     def __init__(self, identifierType: DeviceIdentifierType = DeviceIdentifierType.FROM_LIST, identifierString: str = '', baudrate: int = 115200, timeout: int = 0, waitTime: int = 2):
         """
         ESP Controller connection and communication class
-        @param identifierType: DeviceIdentifierType - Type of identifier to use for device identification (default: DeviceIdentifierType.AUTO_DETECT) [PORT, SERIAL_NUMBER, AUTO_DETECT, FROM_LIST]
+        @param identifierType: DeviceIdentifierType - Type of identifier to use for device identification (default: DeviceIdentifierType.FROM_LIST) [PORT, SERIAL_NUMBER, AUTO_DETECT, FROM_LIST]
         @param identifierString: str - Identifier string to use for device identification (default: '') [PORT, SERIAL_NUMBER]
-        @param baudrate: int - Baudrate to use for serial communication (default: 9600)
+        @param baudrate: int - Baudrate to use for serial communication (default: 115200)
         @param timeout: int - Timeout for serial communication (default: 0)
         @param waitTime: int - Wait time for controller to initialize in seconds (default: 2s)
         """
