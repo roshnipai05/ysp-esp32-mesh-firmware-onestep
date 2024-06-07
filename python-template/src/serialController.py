@@ -29,7 +29,7 @@ class ESPController:
     @param waitTime: int - Wait time for controller to initialize in seconds (default: 2s)
     """
 
-    def __init__(self, identifierType: DeviceIdentifierType = DeviceIdentifierType.AUTO_DETECT, identifierString: str = '', baudrate: int = 9600, timeout: int = 0, waitTime: int = 2):
+    def __init__(self, identifierType: DeviceIdentifierType = DeviceIdentifierType.FROM_LIST, identifierString: str = '', baudrate: int = 115200, timeout: int = 0, waitTime: int = 2):
         """
         ESP Controller connection and communication class
         @param identifierType: DeviceIdentifierType - Type of identifier to use for device identification (default: DeviceIdentifierType.AUTO_DETECT) [PORT, SERIAL_NUMBER, AUTO_DETECT, FROM_LIST]
