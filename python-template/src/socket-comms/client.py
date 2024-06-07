@@ -13,7 +13,7 @@ def signal_handler(sig, frame):
     send_data('exit')
     sys.exit(0)
 
-def check_server(host, port):
+def check_server_availability(host, port):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(2)
@@ -30,7 +30,7 @@ def send_data(data, host='127.0.0.1', port=65432):
             s.connect((host, port))
             s.sendall(data.encode())
     except ConnectionError as e:
-        print(f"Failed to connect or send data: {e}")
+        print(f"Connection failed: {e}")
 
 def main():
     host = '127.0.0.1'
@@ -40,7 +40,7 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame))
     signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(sig, frame))
 
-    if not check_server(host, port):
+    if not check_server_availability(host, port):
         print('Server must be running before client starts.')
         print('Run `python server.py` in a different terminal before running this script.')
         sys.exit(1)
