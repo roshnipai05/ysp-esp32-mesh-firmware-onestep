@@ -30,24 +30,28 @@ def trigger_exit():
 def self_identifier(id):
     print(f"[server] My Node ID: {id}")
 
+def process_line(line, file):
+    try:
+        json_data = json.loads(line.strip())
+        json.dump(json_data, file, indent=4)
+        file.write('\n')
+    except json.JSONDecodeError:
+        # ignore lines that are not valid json
+        # callee loop will pass the next line
+        pass
+
 def topology_export_handler(controller, cmd):
     controller.push(cmd)
     time.sleep(0.5)
     serial_buff = controller.pull()
     print(f"[export] Ready for export: {serial_buff}")
-    # create/open topology.json
+
     try:
         with open(TOPOLOGY_FILE, 'w') as ofile:
             for line in serial_buff.split('\n'):
-                try:
-                    json_data = json.loads(line.strip())
-                    json.dump(json_data, ofile, indent=4)
-                    ofile.write('\n')
-                except json.JSONDecodeError:
-                    # skip lines which are invalid json
-                    continue
+                process_line(line.strip(), ofile)
     except FileNotFoundError:
-        print('Ensure `src/` dir exists')
+        print('Ensure `src/` dir has not been renamed')
     except OSError as e:
         print(f"OS Error: {e}")
     except Exception as e:
