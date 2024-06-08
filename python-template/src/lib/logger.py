@@ -24,12 +24,14 @@ class ColorizedLoggingHandler(logging.StreamHandler):
         except Exception:
             self.handleError(record)
 
-def get_logger(name='ColorLogger'):
+def get_logger(name='ColorLogger', level = logging.DEBUG):
     logger = logging.getLogger(name)
     if not logger.handlers:
-        logger.setLevel(logging.DEBUG)  # Set the default log level
+        logger.setLevel(level)  # Set the default log level
         ch = ColorizedLoggingHandler()
         formatter = logging.Formatter('%(levelname)s: %(message)s')
+        if level == logging.DEBUG:
+            formatter = logging.Formatter('%(levelname)s: [%(funcName)s:%(lineno)d] %(message)s')
         ch.setFormatter(formatter)
         logger.addHandler(ch)
     return logger
