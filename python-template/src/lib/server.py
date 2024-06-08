@@ -33,7 +33,7 @@ def topology_export_handler(controller, cmd):
     controller.push(cmd)
     time.sleep(0.5)
     serial_buff = controller.pull()
-    log.debug(f"[server] Ready for export: {serial_buff}")
+    print(f"[server] Ready for export: {serial_buff}")
 
     try:
         with open(TOPOLOGY_FILE, 'w') as ofile:
@@ -54,14 +54,14 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
             if cmd_queue.qsize() > 0:
                 cmd_str = cmd_queue.get()
 
-                # connected board's nodeID, no serial call
                 if cmd_str == 'mirror-mirror':
+                    # connected board's nodeID, no serial call
                     self_identifier(node.nodeID)
-
-                # update current network topology json dump
-                if cmd_str == 'capture-topology':
+                elif cmd_str == 'capture-topology':
+                    # update current network topology json dump
                     topology_export_handler(node, cmd_str)
-                node.push(cmd_str)
+                else:
+                    node.push(cmd_str)
             time.sleep(0.5)
     except serial.SerialException as e:
         log.error(f"[serial] Serial error: {e}")
