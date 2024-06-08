@@ -31,23 +31,28 @@ def self_identifier(id):
     print(f"[server] My Node ID: {id}")
 
 def topology_export_handler(controller, cmd):
-    controller.push('topology')
+    controller.push(cmd)
     time.sleep(0.5)
     serial_buff = controller.pull()
-
-    # TODO: write logic to handle partial buffer reads, attempt adding new firmware fn to send object in one line?
     print(f"[export] Ready for export: {serial_buff}")
-
     # create/open topology.json
     try:
         with open(TOPOLOGY_FILE, 'w') as ofile:
-            json.dump(serial_buff, ofile, indent=4)
+            for line in serial_buff.split('\n'):
+                try:
+                    json_data = json.loads(line.strip())
+                    json.dump(json_data, ofile, indent=4)
+                    ofile.write('\n')
+                except json.JSONDecodeError:
+                    # skip lines which are invalid json
+                    continue
     except FileNotFoundError:
         print('Ensure `src/` dir exists')
     except OSError as e:
         print(f"OS Error: {e}")
     except Exception as e:
         print(f"Unexpected Error: {e}")
+
 
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
