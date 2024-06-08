@@ -1,3 +1,4 @@
+import json
 import os
 import queue
 import socket
@@ -9,7 +10,14 @@ import sys
 
 from serialController import ESPController, HWNode
 
+LIB_DIR = os.path.dirname( os.path.abspath(__file__) )
+SRC_DIR = os.path.dirname(LIB_DIR)
+
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
+
 EXIT_COMMAND = 'exit'
+TOPOLOGY_FILE = os.path.join(SRC_DIR, 'topology.json')
 
 # serial_port = '/dev/cu.usbmodem1301'
 # baud_rate = 115200
@@ -22,8 +30,24 @@ def trigger_exit():
 def self_identifier(id):
     print(f"[server] My Node ID: {id}")
 
-def topology_export_handler(controller):
-    pass
+def topology_export_handler(controller, cmd):
+    controller.push('topology')
+    time.sleep(0.5)
+    serial_buff = controller.pull()
+
+    # TODO: write logic to handle partial buffer reads, attempt adding new firmware fn to send object in one line?
+    print(f"[export] Ready for export: {serial_buff}")
+
+    # create/open topology.json
+    try:
+        with open(TOPOLOGY_FILE, 'w') as ofile:
+            json.dump(serial_buff, ofile, indent=4)
+    except FileNotFoundError:
+        print('Ensure `src/` dir exists')
+    except OSError as e:
+        print(f"OS Error: {e}")
+    except Exception as e:
+        print(f"Unexpected Error: {e}")
 
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
@@ -44,7 +68,7 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
 
                 # update current network topology json dump
                 if cmd_str == 'capture-topology':
-                    topology_export_handler(node)
+                    topology_export_handler(node, cmd_str)
                 node.push(cmd_str)
                 # cmd_str += '\n'
                 # ser.write(cmd_str.encode('utf-8'))
