@@ -53,11 +53,8 @@ def topology_export_handler(controller, cmd):
             for line in serial_buff.split('\n'):
                 if process_line(line, ofile):
                     break   # exit loop after json file is populated successfully
-    except FileNotFoundError:
-        print('Ensure `src/` dir has not been renamed')
     except Exception as e:
         print(f"Unexpected Error: {e}")
-
 
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
