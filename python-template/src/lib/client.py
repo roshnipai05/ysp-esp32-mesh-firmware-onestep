@@ -4,6 +4,7 @@ import re
 import signal
 import socket
 import sys
+from DeviceList import AllowedDevicesNodeIDs
 
 from logger import get_logger, pprint
 
@@ -16,6 +17,7 @@ if SRC_DIR not in sys.path:
 from edit import encrypt
 
 log = get_logger()
+device_list = dict()
 wordlist = list()
 payload = ''
 encrypted_payload = ''
@@ -75,7 +77,7 @@ def ping_cmd_handler(args):
 
         # TODO: check with device list and print helpful error messages
         # replace hw_index with corresponding node_id
-        if not hw_index.isdigit():
+        if not hw_index.isdigit() or int(hw_index) not in device_list:
             raise ValueError('[hw index] needs to be the number on your development board')
         if not colour_validator(colour):
             raise ValueError('[color hex] needs to be a hex value (like `#ff0000`) or the word `false`')
@@ -84,7 +86,8 @@ def ping_cmd_handler(args):
             global payload, encrypted_payload
             payload = ''.join(random.sample(wordlist, 5))
             encrypted_payload = encrypt(payload)
-            send_data(f"ping {hw_index} {colour} {encrypted_payload}")
+            # replace HWIndex with nodeID
+            send_data(f"ping {device_list[int(hw_index)]} {colour} {encrypted_payload}")
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `ping_node [hw index] [color hex OR \'false\']`')
@@ -166,6 +169,12 @@ def main():
 
     log.info('Command Interface initiated. Press CTRL+C or type "exit" to exit.')
     try:
+        # Initialise device list
+        # AllowedDevicesNodeIDs key-value pair is (nodeID, HWIndex).
+        # We need the reverse since `ping_node` takes HWIndex
+        global device_list
+        device_list = {v: k for k, v in AllowedDevicesNodeIDs.items()}
+
         # Read the wordfile and load words into a list
         wordlist_filepath = os.path.join(LIB_DIR, 'wordlist')
         with open(wordlist_filepath, 'r') as file:
@@ -181,6 +190,8 @@ def main():
             usr_input_handler(usr_input)
     except FileNotFoundError:
         log.error('File `wordlist` not found in `src/lib/`')
+    except Exception as e:
+        log.error(f"Unexpected error: {e}")
     finally:
         log.info('Closing Command Interface')
 
