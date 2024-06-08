@@ -4,19 +4,13 @@ import re
 import signal
 import socket
 import sys
+
 from DeviceList import AllowedDevicesNodeIDs
 
-from logger import get_logger, pprint
-
-LIB_DIR = os.path.dirname( os.path.abspath(__file__) )
-SRC_DIR = os.path.dirname(LIB_DIR)
-
-if SRC_DIR not in sys.path:
-    sys.path.append(SRC_DIR)
-
+from config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, WORDLIST_FILE, log
 from edit import encrypt
+from logger import pprint
 
-log = get_logger()
 device_list = dict()
 wordlist = list()
 payload = ''
@@ -30,21 +24,20 @@ def signal_handler(sig, frame):
     log.info('Initiating interface shutdown...')
 
     # init server exit before shutting down
-    send_data('exit')
+    send_data(EXIT_COMMAND)
     sys.exit(0)
 
-def check_server_availability(host, port):
+def check_server_availability(host=SOCK_HOST, port=SOCK_PORT):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(2)
             s.connect((host, port))
             s.close()
         return True
-    except socket.error as e:
-        # log.error(f"Server not available: {e}")
+    except socket.error:
         return False
 
-def send_data(data, host='127.0.0.1', port=65432):
+def send_data(data, host=SOCK_HOST, port=SOCK_PORT):
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((host, port))
@@ -75,8 +68,6 @@ def ping_cmd_handler(args):
 
         hw_index, colour = args
 
-        # TODO: check with device list and print helpful error messages
-        # replace hw_index with corresponding node_id
         if not hw_index.isdigit() or int(hw_index) not in device_list:
             raise ValueError('[hw index] needs to be the number on your development board')
         if not colour_validator(colour):
@@ -84,8 +75,10 @@ def ping_cmd_handler(args):
         else:
             # generate message and send
             global payload, encrypted_payload
+
             payload = ''.join(random.sample(wordlist, 5))
             encrypted_payload = encrypt(payload)
+
             # replace HWIndex with nodeID
             send_data(f"ping {device_list[int(hw_index)]} {colour} {encrypted_payload}")
     except ValueError as e:
@@ -96,6 +89,7 @@ def payload_cmd_handler(args):
     try:
         if len(args) != 0:
             raise ValueError('Incorrect use of `print_payload` command')
+
         print('Payload used for the previous `ping_node` command\nNote: Encrypted payload is sent to the pinged node\n')
         print(f"Unencrypted payload: {payload}")
         print(f"Encrypted payload: {encrypted_payload}")
@@ -107,6 +101,7 @@ def nodeid_cmd_handler(args):
     try:
         if len(args) != 0:
             raise ValueError('Incorrect use of `print_my_nodeid` command')
+
         print("Your development board's Node ID will be printed on the Serial Monitor now")
         send_data('mirror-mirror')
     except ValueError as e:
@@ -117,6 +112,7 @@ def export_topology_cmd_handler(args):
     try:
         if len(args) != 0:
             raise ValueError('Incorrect use of `export_topology_cmd_handler` command')
+
         print('Current topology will be saved to `src/topology.json`')
         send_data('capture-topology')
     except ValueError as e:
@@ -155,8 +151,8 @@ def usr_input_handler(input_string):
         command_handlers['help'](args)
 
 def main():
-    host = '127.0.0.1'
-    port = 65432
+    host = SOCK_HOST
+    port = SOCK_PORT
 
     # Register signal handlers
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame))
@@ -176,15 +172,14 @@ def main():
         device_list = {v: k for k, v in AllowedDevicesNodeIDs.items()}
 
         # Read the wordfile and load words into a list
-        wordlist_filepath = os.path.join(LIB_DIR, 'wordlist')
-        with open(wordlist_filepath, 'r') as file:
+        with open(WORDLIST_FILE, 'r') as file:
             global wordlist
             wordlist = file.read().split()
 
         while True:
             pprint('\nEnter a command\n> ', '')
             usr_input = base_string_validator(input())
-            if usr_input == 'exit':
+            if usr_input == EXIT_COMMAND:
                 trigger_exit()
                 break
             usr_input_handler(usr_input)

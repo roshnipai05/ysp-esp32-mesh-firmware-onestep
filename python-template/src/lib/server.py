@@ -8,24 +8,11 @@ import serial
 import signal
 import sys
 
-from logger import get_logger
+from config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, TOPOLOGY_FILE, log
 from serialController import ESPController, HWNode
 
-LIB_DIR = os.path.dirname( os.path.abspath(__file__) )
-SRC_DIR = os.path.dirname(LIB_DIR)
-
-if SRC_DIR not in sys.path:
-    sys.path.append(SRC_DIR)
-
-EXIT_COMMAND = 'exit'
-TOPOLOGY_FILE = os.path.join(SRC_DIR, 'topology.json')
-
-log = get_logger()
-# serial_port = '/dev/cu.usbmodem1301'
-# baud_rate = 115200
-# ser = serial.Serial(serial_port, baud_rate)
-
 def trigger_exit():
+    log.debug('[server] exit triggered')
     # invoke SIGINT when user enters 'exit'. Signal handler will take care of cleanup.
     os.kill(os.getpid(), signal.SIGINT)
 
@@ -46,7 +33,7 @@ def topology_export_handler(controller, cmd):
     controller.push(cmd)
     time.sleep(0.5)
     serial_buff = controller.pull()
-    print(f"[export] Ready for export: {serial_buff}")
+    log.debug(f"[server] Ready for export: {serial_buff}")
 
     try:
         with open(TOPOLOGY_FILE, 'w') as ofile:
@@ -54,15 +41,13 @@ def topology_export_handler(controller, cmd):
                 if process_line(line, ofile):
                     break   # exit loop after json file is populated successfully
     except Exception as e:
-        print(f"Unexpected Error: {e}")
+        log.error(f"Unexpected Error: {e}")
 
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
     try:
         # if signal handler requested a shutdown, break out of loop
         while not shutdown_event.is_set():
-            # if ser.in_waiting > 0:
-            #     read_data = ser.read(ser.in_waiting).decode('utf-8')
             read_data = node.pull()
             if read_data:
                 print(f"[serial] Received:\n{read_data}")
@@ -77,21 +62,17 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
                 if cmd_str == 'capture-topology':
                     topology_export_handler(node, cmd_str)
                 node.push(cmd_str)
-                # cmd_str += '\n'
-                # ser.write(cmd_str.encode('utf-8'))
             time.sleep(0.5)
     except serial.SerialException as e:
-        print(f"[serial] Serial error: {e}")
+        log.error(f"[serial] Serial error: {e}")
     finally:
         print('[serial] Closing serial monitor')
         node.disconnectESP()
-        # ser.close()
 
 
 def client_handler(conn, addr, cmd_queue):
     # IMP: *only* writes to Queue
-    # TODO: add logger w/ levels set using config.py
-    # print(f"Connected by {addr}")
+    log.debug(f"Connected by {addr}")
     try:
         while True:
             data = conn.recv(1024)
@@ -105,22 +86,22 @@ def client_handler(conn, addr, cmd_queue):
             print(f"[server] Sending command: {data.decode()}")
             cmd_queue.put(data.decode())
     except ConnectionResetError:
-        print(f"[server] Connection reset by {addr}")
+        log.error(f"[server] Connection reset by {addr}")
     finally:
         conn.close()
 
 def init_server(signal_handler, input_queue):
-    # TODO: set in config.py
-    host = '127.0.0.1'
-    port = 65432
+    host = SOCK_HOST
+    port = SOCK_PORT
+
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen()
     print(f"[server] Server started on {host}:{port}")
 
     # Register signal handlers
-    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(server_socket, sig, frame))
-    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(server_socket, sig, frame))
+    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame))
+    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(sig, frame))
 
     try:
         while True:
@@ -150,7 +131,7 @@ def main():
     serial_thread = threading.Thread(target=serial_interface, args=(HWNode, client_cmd_queue, shutdown_event))
     serial_thread.start()
 
-    def signal_handler(server, sig, frame):
+    def signal_handler(sig, frame):
         print('\n[housekeeping] Initiating shutdown...')
         shutdown_event.set()
 
