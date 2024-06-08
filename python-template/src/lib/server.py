@@ -35,10 +35,10 @@ def process_line(line, file):
         json_data = json.loads(line.strip())
         json.dump(json_data, file, indent=4)
         file.write('\n')
+        return True
     except json.JSONDecodeError:
-        # ignore lines that are not valid json
-        # callee loop will pass the next line
-        pass
+        # continue with the callee loop if json is not valid
+        return False
 
 def topology_export_handler(controller, cmd):
     controller.push(cmd)
@@ -49,11 +49,10 @@ def topology_export_handler(controller, cmd):
     try:
         with open(TOPOLOGY_FILE, 'w') as ofile:
             for line in serial_buff.split('\n'):
-                process_line(line.strip(), ofile)
+                if process_line(line, ofile):
+                    break   # exit loop after json file is populated successfully
     except FileNotFoundError:
         print('Ensure `src/` dir has not been renamed')
-    except OSError as e:
-        print(f"OS Error: {e}")
     except Exception as e:
         print(f"Unexpected Error: {e}")
 
