@@ -8,6 +8,7 @@ import serial
 import signal
 import sys
 
+from logger import get_logger
 from serialController import ESPController, HWNode
 
 LIB_DIR = os.path.dirname( os.path.abspath(__file__) )
@@ -19,6 +20,7 @@ if SRC_DIR not in sys.path:
 EXIT_COMMAND = 'exit'
 TOPOLOGY_FILE = os.path.join(SRC_DIR, 'topology.json')
 
+log = get_logger()
 # serial_port = '/dev/cu.usbmodem1301'
 # baud_rate = 115200
 # ser = serial.Serial(serial_port, baud_rate)
@@ -135,6 +137,12 @@ def init_server(signal_handler, input_queue):
 
 def main():
     global HWNode
+
+    if not HWNode.controller:
+        log.error('[housekeeping] No development board detected on your device')
+        log.info('Check if your board is connected and the red on-board light is on')
+        sys.exit(1)
+
     # client commands queue
     # IMP: there are no locks. Make sure we are dealing with only one Queue.
     client_cmd_queue = queue.Queue()
