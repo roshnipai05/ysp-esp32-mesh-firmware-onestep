@@ -113,24 +113,28 @@ def nodeid_cmd_handler(args):
 def export_topology_cmd_handler(args):
     try:
         if len(args) != 0:
-            raise ValueError('Incorrect use of `export_topology_cmd_handler` command')
+            raise ValueError('Incorrect use of `export_topology` command')
 
         print('Current topology will be saved to `src/topology.json`')
         send_data('export_topology')
     except ValueError as e:
         log.warning(e)
-        log.info('Usage: `export_topology_cmd_handler`')
+        log.info('Usage: `export_topology`')
 
 def help_cmd_handler(args):
-    # TODO: update help text
+    commands = {
+        'get_topology': 'Retrieve network topology',
+        'ping_node': 'Send a ping to a node with optional color. Usage: ping_node [hw index] [color hex OR `false`]',
+        'print_my_nodeid': 'Display the node ID of the development board connected to your device',
+        'print_payload': 'Print the encrypted and plaintext payload sent in the previous `ping_node`',
+        'export_topology': 'Retrieve and save the current network topology to a JSON file `src/topology.json`',
+        'help': 'Display this help message',
+        'exit': 'Exit the command interface'
+    }
+
     print('Available Commands:')
-    print('  get_topology           - Retrieve network topology')
-    print('  ping_node [hw index] [color hex OR `false`] - Send a ping to a node with optional color')
-    print('  print_my_nodeid        - Display the node ID of the development board connected to your device')
-    print('  print_payload          - Print the encrypted and plaintext payload sent in the previous `ping_node`')
-    print('  export_topology        - Retrieve and save the current network topology to a JSON file `src/topology.json`')
-    print('  help                   - Display this help message')
-    print('  exit                   - Exit the command interface')
+    for command, description in commands.items():
+        print(f'  {command:<25} - {description}')
 
 command_handlers = {
     'get_topology': topology_cmd_handler,
