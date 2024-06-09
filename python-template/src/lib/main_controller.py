@@ -9,15 +9,17 @@ import signal
 import sys
 
 from CommandParser import CommandParser
-from Config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, TOPOLOGY_FILE, log
+from Config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, log
 from SerialController import ESPController, HWNode
 
 parser = CommandParser()
 
-def trigger_exit():
+def trigger_exit(signal_handler):
     log.debug('[server] exit triggered')
     # invoke SIGINT when user enters 'exit'. Signal handler will take care of cleanup.
-    os.kill(os.getpid(), signal.SIGINT)
+    # os.kill(os.getpid(), signal.SIGINT)
+    # Signal handling is hacky on Windows. This works for now.
+    signal_handler(signal.SIGINT, None)
 
 def self_identifier(id):
     print(f'[server] My Node ID: {id}')
@@ -40,7 +42,6 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
                     self_identifier(node.nodeID)
                 else:
                     serial_send_payload = parser.create_payload(cmd_str)
-                    print(serial_send_payload)
                     node.push(serial_send_payload)
             time.sleep(0.5)
     except serial.SerialException as e:
@@ -50,7 +51,7 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
         node.disconnectESP()
 
 
-def client_handler(conn, addr, cmd_queue):
+def client_handler(conn, addr, cmd_queue, signal_handler):
     # IMP: *only* writes to Queue
     log.debug(f'Connected by {addr}')
     try:
@@ -60,7 +61,7 @@ def client_handler(conn, addr, cmd_queue):
                 break
             # only parse to check for exit command to start exit immediately
             if data.decode() == EXIT_COMMAND:
-                trigger_exit()
+                trigger_exit(signal_handler)
                 break
 
             print(f'[server] Sending command: {data.decode()}')
@@ -86,7 +87,7 @@ def init_server(signal_handler, input_queue):
     try:
         while True:
             conn, addr = server_socket.accept()
-            client_thread = threading.Thread(target=client_handler, args=(conn, addr, input_queue))
+            client_thread = threading.Thread(target=client_handler, args=(conn, addr, input_queue, signal_handler))
             client_thread.daemon = True    # background daemon, easy exit handling
             client_thread.start()
     finally:

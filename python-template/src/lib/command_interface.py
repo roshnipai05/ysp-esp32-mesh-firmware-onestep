@@ -15,7 +15,9 @@ payload = ''
 encrypted_payload = ''
 
 def trigger_exit():
-    os.kill(os.getpid(), signal.SIGINT)
+    # os.kill(os.getpid(), signal.SIGINT)
+    # Signal handling is hacky on Windows. This works for now.
+    signal_handler(signal.SIGINT, None)
 
 def signal_handler(sig, frame):
     print('\n')
