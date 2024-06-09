@@ -8,8 +8,11 @@ import serial
 import signal
 import sys
 
+from CommandParser import CommandParser
 from Config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, TOPOLOGY_FILE, log
 from SerialController import ESPController, HWNode
+
+parser = CommandParser()
 
 def trigger_exit():
     log.debug('[server] exit triggered')
@@ -61,7 +64,9 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
                     # update current network topology json dump
                     topology_export_handler(node, cmd_str)
                 else:
-                    node.push(cmd_str)
+                    serial_send_payload = parser.create_payload(cmd_str)
+                    print(serial_send_payload)
+                    node.push(serial_send_payload)
             time.sleep(0.5)
     except serial.SerialException as e:
         log.error(f'[serial] Serial error: {e}')

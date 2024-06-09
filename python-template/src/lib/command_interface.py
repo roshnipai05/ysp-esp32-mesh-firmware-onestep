@@ -54,7 +54,7 @@ def topology_cmd_handler(args):
     try:
         if len(args) != 0:
             raise ValueError('Incorrect use of `get_topology` command')
-        send_data('topology')
+        send_data('get_topology')
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `get_topology`')
@@ -78,7 +78,7 @@ def ping_cmd_handler(args):
             encrypted_payload = encrypt(payload)
 
             # replace HWIndex with nodeID
-            send_data(f'ping {device_list[int(hw_index)]} {colour} {encrypted_payload}')
+            send_data(f'ping_node {device_list[int(hw_index)]} {colour} {encrypted_payload}')
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `ping_node [hw index] [color hex OR \'false\']`')
@@ -116,12 +116,13 @@ def export_topology_cmd_handler(args):
             raise ValueError('Incorrect use of `export_topology_cmd_handler` command')
 
         print('Current topology will be saved to `src/topology.json`')
-        send_data('capture-topology')
+        send_data('export_topology')
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `export_topology_cmd_handler`')
 
 def help_cmd_handler(args):
+    # TODO: update help text
     print('Available Commands:')
     print('  get_topology           - Retrieve network topology')
     print('  ping_node [hw index] [color hex OR `false`] - Send a ping to a node with optional color')
