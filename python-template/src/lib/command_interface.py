@@ -122,19 +122,19 @@ def export_topology_cmd_handler(args):
         log.info('Usage: `export_topology`')
 
 def help_cmd_handler(args):
-    commands = {
-        'get_topology': 'Retrieve network topology',
-        'ping_node': 'Send a ping to a node with optional color. Usage: ping_node [hw index] [color hex OR `false`]',
-        'print_my_nodeid': 'Display the node ID of the development board connected to your device',
-        'print_payload': 'Print the encrypted and plaintext payload sent in the previous `ping_node`',
-        'export_topology': 'Retrieve and save the current network topology to a JSON file `src/topology.json`',
-        'help': 'Display this help message',
-        'exit': 'Exit the command interface'
-    }
-
     print('Available Commands:')
-    for command, description in commands.items():
+    for command, description in command_descriptions.items():
         print(f'  {command:<25} - {description}')
+
+command_descriptions = {
+    'get_topology': 'Retrieve network topology',
+    'ping_node': 'Send a ping to a node with optional color. Usage: ping_node [hw index] [color hex OR `false`]',
+    'print_my_nodeid': 'Display the node ID of the development board connected to your device',
+    'print_payload': 'Print the encrypted and plaintext payload sent in the previous `ping_node`',
+    'export_topology': 'Retrieve and save the current network topology to a JSON file `src/topology.json`',
+    'help': 'Display this help message',
+    'exit': 'Exit the command interface'
+}
 
 command_handlers = {
     'get_topology': topology_cmd_handler,
@@ -142,8 +142,10 @@ command_handlers = {
     'print_my_nodeid': nodeid_cmd_handler,
     'print_payload': payload_cmd_handler,
     'export_topology': export_topology_cmd_handler,
-    'help': help_cmd_handler
+    'help': help_cmd_handler,
 }
+
+############ ...something here?
 
 def usr_input_handler(input_string):
     # IMP: `input_string` should be lowercase
@@ -154,6 +156,8 @@ def usr_input_handler(input_string):
 
     if cmd in command_handlers:
         command_handlers[cmd](args)
+    elif 'admin_command_handlers' in globals() and cmd in admin_command_handlers:
+        admin_command_handlers[cmd](cmd, args)
     else:
         command_handlers['help'](args)
 
