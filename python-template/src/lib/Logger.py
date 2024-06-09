@@ -37,3 +37,10 @@ def get_logger(name='ColorLogger', level = logging.DEBUG):
 
 def pprint(message, end='\n'):
     print(Fore.CYAN + message + Style.RESET_ALL, end=end)
+
+class ControlFlowException(Exception):
+    """
+    Raised when we encounter unexpected control flow in user-facing sections
+    """
+    pass
+

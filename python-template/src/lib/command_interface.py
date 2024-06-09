@@ -7,7 +7,7 @@ import sys
 
 from Config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, WORDLIST_FILE, log
 from DeviceList import AllowedDevicesNodeIDs
-from Logger import pprint
+from Logger import ControlFlowException, pprint
 
 from workspace import encrypt
 
@@ -89,10 +89,14 @@ def payload_cmd_handler(args):
     try:
         if len(args) != 0:
             raise ValueError('Incorrect use of `print_payload` command')
+        if payload == '':
+            raise ControlFlowException('First use `ping_node` to generate and send a message to another node for payload to be available')
 
         print('Payload used for the previous `ping_node` command\nNote: Encrypted payload is sent to the pinged node\n')
         print(f'Unencrypted payload: {payload}')
         print(f'Encrypted payload: {encrypted_payload}')
+    except ControlFlowException as e:
+        log.warning(e)
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `print_payload`')
