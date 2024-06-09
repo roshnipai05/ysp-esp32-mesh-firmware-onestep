@@ -6,11 +6,10 @@ colorama.init(autoreset=True)
 
 class ColorizedLoggingHandler(logging.StreamHandler):
     colors = {
-        "INFO": Fore.BLUE + Style.NORMAL,
-        "WARNING": Fore.YELLOW + Style.NORMAL,
-        "ERROR": Fore.RED + Style.NORMAL,
-        "DEBUG": Fore.WHITE + Style.NORMAL,
-        "PROMPT": Fore.MAGENTA + Style.NORMAL
+        'INFO': Fore.BLUE + Style.NORMAL,
+        'WARNING': Fore.YELLOW + Style.NORMAL,
+        'ERROR': Fore.RED + Style.NORMAL,
+        'DEBUG': Fore.WHITE + Style.NORMAL,
     }
 
     def emit(self, record):

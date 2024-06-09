@@ -43,7 +43,7 @@ def send_data(data, host=SOCK_HOST, port=SOCK_PORT):
             s.connect((host, port))
             s.sendall(data.encode())
     except ConnectionError as e:
-        log.error(f"Connection failed: {e}")
+        log.error(f'Connection failed: {e}')
 
 def colour_validator(colour):
     # IMP: `colour` should be all lowercase
@@ -80,7 +80,7 @@ def ping_cmd_handler(args):
             encrypted_payload = encrypt(payload)
 
             # replace HWIndex with nodeID
-            send_data(f"ping {device_list[int(hw_index)]} {colour} {encrypted_payload}")
+            send_data(f'ping {device_list[int(hw_index)]} {colour} {encrypted_payload}')
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `ping_node [hw index] [color hex OR \'false\']`')
@@ -91,8 +91,8 @@ def payload_cmd_handler(args):
             raise ValueError('Incorrect use of `print_payload` command')
 
         print('Payload used for the previous `ping_node` command\nNote: Encrypted payload is sent to the pinged node\n')
-        print(f"Unencrypted payload: {payload}")
-        print(f"Encrypted payload: {encrypted_payload}")
+        print(f'Unencrypted payload: {payload}')
+        print(f'Encrypted payload: {encrypted_payload}')
     except ValueError as e:
         log.warning(e)
         log.info('Usage: `print_payload`')
@@ -186,7 +186,7 @@ def main():
     except FileNotFoundError:
         log.error('File `wordlist` not found in `src/lib/`')
     except Exception as e:
-        log.error(f"Unexpected error: {e}")
+        log.error(f'Unexpected error: {e}')
     finally:
         log.info('Closing Command Interface')
 

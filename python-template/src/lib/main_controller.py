@@ -17,7 +17,7 @@ def trigger_exit():
     os.kill(os.getpid(), signal.SIGINT)
 
 def self_identifier(id):
-    print(f"[server] My Node ID: {id}")
+    print(f'[server] My Node ID: {id}')
 
 def process_line(line, file):
     try:
@@ -33,7 +33,7 @@ def topology_export_handler(controller, cmd):
     controller.push(cmd)
     time.sleep(0.5)
     serial_buff = controller.pull()
-    print(f"[server] Ready for export: {serial_buff}")
+    print(f'[server] Ready for export: {serial_buff}')
 
     try:
         with open(TOPOLOGY_FILE, 'w') as ofile:
@@ -41,7 +41,7 @@ def topology_export_handler(controller, cmd):
                 if process_line(line, ofile):
                     break   # exit loop after json file is populated successfully
     except Exception as e:
-        log.error(f"Unexpected Error: {e}")
+        log.error(f'Unexpected Error: {e}')
 
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
@@ -50,7 +50,7 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
         while not shutdown_event.is_set():
             read_data = node.pull()
             if read_data:
-                print(f"[serial] Received:\n{read_data}")
+                print(f'[serial] Received:\n{read_data}')
             if cmd_queue.qsize() > 0:
                 cmd_str = cmd_queue.get()
 
@@ -64,7 +64,7 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
                     node.push(cmd_str)
             time.sleep(0.5)
     except serial.SerialException as e:
-        log.error(f"[serial] Serial error: {e}")
+        log.error(f'[serial] Serial error: {e}')
     finally:
         print('[serial] Closing serial monitor')
         node.disconnectESP()
@@ -72,7 +72,7 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
 
 def client_handler(conn, addr, cmd_queue):
     # IMP: *only* writes to Queue
-    log.debug(f"Connected by {addr}")
+    log.debug(f'Connected by {addr}')
     try:
         while True:
             data = conn.recv(1024)
@@ -83,10 +83,10 @@ def client_handler(conn, addr, cmd_queue):
                 trigger_exit()
                 break
 
-            print(f"[server] Sending command: {data.decode()}")
+            print(f'[server] Sending command: {data.decode()}')
             cmd_queue.put(data.decode())
     except ConnectionResetError:
-        log.error(f"[server] Connection reset by {addr}")
+        log.error(f'[server] Connection reset by {addr}')
     finally:
         conn.close()
 
@@ -97,7 +97,7 @@ def init_server(signal_handler, input_queue):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen()
-    print(f"[server] Server started on {host}:{port}")
+    print(f'[server] Server started on {host}:{port}')
 
     # Register signal handlers
     signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame))
