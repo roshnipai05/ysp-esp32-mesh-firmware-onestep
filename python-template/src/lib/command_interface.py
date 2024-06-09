@@ -130,7 +130,7 @@ def help_cmd_handler(args):
 
 command_descriptions = {
     'get_topology': 'Retrieve network topology',
-    'ping_node': 'Send a ping to a node with optional color. Usage: ping_node [hw index] [color hex OR `false`]',
+    'ping_node': 'Send a ping to a node with optional color. Usage: `ping_node [hw index] [color hex OR \'false\']`',
     'print_my_nodeid': 'Display the node ID of the development board connected to your device',
     'print_payload': 'Print the encrypted and plaintext payload sent in the previous `ping_node`',
     'export_topology': 'Retrieve and save the current network topology to a JSON file `src/topology.json`',
@@ -173,7 +173,7 @@ def main():
 
     if not check_server_availability(host, port):
         log.error('Server must be running before client starts.')
-        log.info('Run `python server.py` in a different terminal before running this script.')
+        log.info('Run `cd src` `python lib/.py` in a different terminal before running this script.')
         sys.exit(1)
 
     log.info('Command Interface initiated. Press CTRL+C or type "exit" to exit.')
