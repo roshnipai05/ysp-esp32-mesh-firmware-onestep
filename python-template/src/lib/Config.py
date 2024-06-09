@@ -10,6 +10,8 @@ SRC_DIR = os.path.dirname(LIB_DIR)
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
+from workspace import encrypt, decrypt
+
 TOPOLOGY_FILE = os.path.join(SRC_DIR, 'topology.json')
 WORDLIST_FILE = os.path.join(LIB_DIR, 'wordlist')
 EXIT_COMMAND = 'exit'

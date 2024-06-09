@@ -5,11 +5,9 @@ import signal
 import socket
 import sys
 
-from Config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, WORDLIST_FILE, log
+from Config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, WORDLIST_FILE, encrypt, log
 from DeviceList import AllowedDevicesNodeIDs
 from Logger import ControlFlowException, pprint
-
-from workspace import encrypt
 
 device_list = dict()
 wordlist = list()
