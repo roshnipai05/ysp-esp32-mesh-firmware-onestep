@@ -252,6 +252,9 @@ class ESPController:
 # Instantiate an object and make it available for export
 HWNode = ESPController(identifierType=DeviceIdentifierType.FROM_LIST)
 
+####### Root Node: uncomment this and comment line 253
+# HWNode = ESPController(identifierType=DeviceIdentifierType.SERIAL_NUMBER, identifierString='0001')
+
 if __name__ == '__main__':
     # print(ESPController.listConnectedDevices())
     test = ESPController(identifierType=DeviceIdentifierType.FROM_LIST)
