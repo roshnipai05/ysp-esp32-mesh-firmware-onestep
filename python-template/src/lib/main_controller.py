@@ -69,6 +69,7 @@ def client_handler(conn, addr, cmd_queue, shutdown_event, serial_thread):
     except ConnectionResetError:
         log.error(f'[server] Connection reset by {addr}')
     finally:
+        log.debug('Closing client connection')
         conn.close()
 
 def init_server(input_queue, shutdown_event, serial_thread):
@@ -101,6 +102,12 @@ def signal_handler(shutdown_event, serial_thread, sig, frame):
     # wait for serial monitor to exit once `shutdown_event` is set
     serial_thread.join()
 
+    # Hacky fix. After shutdown event is set, try a connection so control flow moves from
+    # server_socket.accept() on line 90, and the next check breaks out of the while loop.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.5)
+        s.connect((SOCK_HOST, SOCK_PORT))
+        s.close()
     # serial and server threads will free their objects on exit
     sys.exit(0)
 
