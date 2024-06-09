@@ -55,7 +55,7 @@ def client_handler(conn, addr, cmd_queue, shutdown_event, serial_thread):
     # IMP: *only* writes to Queue
     log.debug(f'Connected by {addr}')
     try:
-        while True:
+        while not shutdown_event.is_set():
             data = conn.recv(1024)
             if not data:
                 break
@@ -85,7 +85,7 @@ def init_server(input_queue, shutdown_event, serial_thread):
     signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(shutdown_event, serial_thread, sig, frame))
 
     try:
-        while True:
+        while not shutdown_event.is_set():
             conn, addr = server_socket.accept()
             client_thread = threading.Thread(target=client_handler, args=(conn, addr, input_queue, shutdown_event, serial_thread))
             client_thread.daemon = True    # background daemon, easy exit handling
