@@ -14,12 +14,12 @@ from SerialController import ESPController, HWNode
 
 parser = CommandParser()
 
-def trigger_exit(signal_handler):
+def trigger_exit(shutdown_event, serial_thread):
     log.debug('[server] exit triggered')
     # invoke SIGINT when user enters 'exit'. Signal handler will take care of cleanup.
     # os.kill(os.getpid(), signal.SIGINT)
     # Signal handling is hacky on Windows. This works for now.
-    signal_handler(signal.SIGINT, None)
+    signal_handler(shutdown_event, serial_thread, signal.SIGINT, None)
 
 def self_identifier(id):
     print(f'[server] My Node ID: {id}')
@@ -51,7 +51,7 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
         node.disconnectESP()
 
 
-def client_handler(conn, addr, cmd_queue, signal_handler):
+def client_handler(conn, addr, cmd_queue, shutdown_event, serial_thread):
     # IMP: *only* writes to Queue
     log.debug(f'Connected by {addr}')
     try:
@@ -61,7 +61,7 @@ def client_handler(conn, addr, cmd_queue, signal_handler):
                 break
             # only parse to check for exit command to start exit immediately
             if data.decode() == EXIT_COMMAND:
-                trigger_exit(signal_handler)
+                trigger_exit(shutdown_event, serial_thread)
                 break
 
             print(f'[server] Sending command: {data.decode()}')
@@ -71,24 +71,38 @@ def client_handler(conn, addr, cmd_queue, signal_handler):
     finally:
         conn.close()
 
-def init_server(host, port, server_socket, signal_handler, input_queue):
+def init_server(input_queue, shutdown_event, serial_thread):
+    host = SOCK_HOST
+    port = SOCK_PORT
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen()
     print(f'[server] Server started on {host}:{port}')
 
     # Register signal handlers
-    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame))
-    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(sig, frame))
+    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(shutdown_event, serial_thread, sig, frame))
+    signal.signal(signal.SIGTERM, lambda sig, frame: signal_handler(shutdown_event, serial_thread, sig, frame))
 
     try:
         while True:
             conn, addr = server_socket.accept()
-            client_thread = threading.Thread(target=client_handler, args=(conn, addr, input_queue, signal_handler))
+            client_thread = threading.Thread(target=client_handler, args=(conn, addr, input_queue, shutdown_event, serial_thread))
             client_thread.daemon = True    # background daemon, easy exit handling
             client_thread.start()
     finally:
         print('[server] Closing server')
         server_socket.close()
+
+def signal_handler(shutdown_event, serial_thread, sig, frame):
+    print('\n[housekeeping] Initiating shutdown...')
+    shutdown_event.set()
+
+    # wait for serial monitor to exit once `shutdown_event` is set
+    serial_thread.join()
+
+    # serial and server threads will free their objects on exit
+    sys.exit(0)
 
 def main():
     global HWNode
@@ -108,23 +122,7 @@ def main():
     serial_thread = threading.Thread(target=serial_interface, args=(HWNode, client_cmd_queue, shutdown_event))
     serial_thread.start()
 
-    host = SOCK_HOST
-    port = SOCK_PORT
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    def signal_handler(sig, frame):
-        print('\n[housekeeping] Initiating shutdown...')
-        shutdown_event.set()
-
-        # wait for serial monitor to exit once `shutdown_event` is set
-        serial_thread.join()
-        server_socket.close()
-
-        # serial and server threads will free their objects on exit
-        sys.exit(0)
-
-    init_server(host, port, server_socket, signal_handler, client_cmd_queue)
+    init_server(client_cmd_queue, shutdown_event, serial_thread)
 
 if __name__ == '__main__':
     main()
