@@ -71,11 +71,7 @@ def client_handler(conn, addr, cmd_queue, signal_handler):
     finally:
         conn.close()
 
-def init_server(signal_handler, input_queue):
-    host = SOCK_HOST
-    port = SOCK_PORT
-
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def init_server(host, port, server_socket, signal_handler, input_queue):
     server_socket.bind((host, port))
     server_socket.listen()
     print(f'[server] Server started on {host}:{port}')
@@ -112,16 +108,23 @@ def main():
     serial_thread = threading.Thread(target=serial_interface, args=(HWNode, client_cmd_queue, shutdown_event))
     serial_thread.start()
 
+    host = SOCK_HOST
+    port = SOCK_PORT
+
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     def signal_handler(sig, frame):
         print('\n[housekeeping] Initiating shutdown...')
         shutdown_event.set()
 
         # wait for serial monitor to exit once `shutdown_event` is set
         serial_thread.join()
+        server_socket.close()
+
         # serial and server threads will free their objects on exit
         sys.exit(0)
 
-    init_server(signal_handler, client_cmd_queue)
+    init_server(host, port, server_socket, signal_handler, client_cmd_queue)
 
 if __name__ == '__main__':
     main()
