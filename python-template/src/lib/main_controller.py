@@ -8,9 +8,8 @@ import serial
 import signal
 import sys
 
+from Config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, TOPOLOGY_FILE, log
 from SerialController import ESPController, HWNode
-
-from config import EXIT_COMMAND, SOCK_HOST, SOCK_PORT, TOPOLOGY_FILE, log
 
 def trigger_exit():
     log.debug('[server] exit triggered')

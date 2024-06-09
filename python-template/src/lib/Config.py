@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 
-from logger import get_logger, pprint
+from Logger import get_logger, pprint
 
 LIB_DIR = os.path.dirname( os.path.abspath(__file__) )
 SRC_DIR = os.path.dirname(LIB_DIR)

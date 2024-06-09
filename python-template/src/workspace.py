@@ -1,7 +1,4 @@
-#Implement your Encryption Functions Here
-
-# Change this to your serial port
-serial_port = '/dev/cu.usbmodem313301'
+# Implement your Encryption Functions Here
 
 
 def encrypt(message):
