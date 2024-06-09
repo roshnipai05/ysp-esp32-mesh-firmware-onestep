@@ -22,30 +22,6 @@ def trigger_exit():
 def self_identifier(id):
     print(f'[server] My Node ID: {id}')
 
-def process_line(line, file):
-    try:
-        json_data = json.loads(line.strip())
-        json.dump(json_data, file, indent=4)
-        file.write('\n')
-        return True
-    except json.JSONDecodeError:
-        # continue with the callee loop if json is not valid
-        return False
-
-def topology_export_handler(controller, cmd):
-    controller.push(cmd)
-    time.sleep(0.5)
-    serial_buff = controller.pull()
-    print(f'[server] Ready for export: {serial_buff}')
-
-    try:
-        with open(TOPOLOGY_FILE, 'w') as ofile:
-            for line in serial_buff.split('\n'):
-                if process_line(line, ofile):
-                    break   # exit loop after json file is populated successfully
-    except Exception as e:
-        log.error(f'Unexpected Error: {e}')
-
 def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event: threading.Event):
     # IMP: *only* reads from Queue
     try:
@@ -53,16 +29,15 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
         while not shutdown_event.is_set():
             read_data = node.pull()
             if read_data:
-                print(f'[serial] Received:\n{read_data}')
+                print(f'[serial] Received >>>')
+                for line in read_data.split('\n'):
+                    print(parser.extract_from_payload(line))
             if cmd_queue.qsize() > 0:
                 cmd_str = cmd_queue.get()
 
                 if cmd_str == 'mirror-mirror':
                     # connected board's nodeID, no serial call
                     self_identifier(node.nodeID)
-                elif cmd_str == 'capture-topology':
-                    # update current network topology json dump
-                    topology_export_handler(node, cmd_str)
                 else:
                     serial_send_payload = parser.create_payload(cmd_str)
                     print(serial_send_payload)

@@ -1,8 +1,6 @@
-# command_parser.py
-
 import json
 
-from Config import log as logger
+from Config import TOPOLOGY_FILE, log as logger
 from Config import decrypt
 
 class CommandParser:
@@ -47,7 +45,7 @@ class CommandParser:
             logger.exception('Error processing command.')
             return json.dumps({})
 
-    def extract_from_json(self, json_str: str) -> str:
+    def extract_from_payload(self, json_str: str) -> str:
         """
         Extracts relevant information from a JSON string. Returns the input string if it cannot be parsed.
         """
@@ -55,17 +53,25 @@ class CommandParser:
             data = json.loads(json_str)
             payload = data.get('payload', {})
             if 'response' in payload:
-                return json.dumps(payload['response'])
+                if payload['cmd'] == 'capture-topology':
+                    self.export_to_jsonfile(TOPOLOGY_FILE, payload['response'], append=False)
+                return json.dumps(payload['response'], indent=2)
             elif data.get('payload_type') == 'mesh':
                 payload['msg'] = self.decrypt(payload['msg'])
-                return json.dumps(payload)
-            return json.dumps(payload)
+                return json.dumps(payload, indent=2)
+            return json.dumps(payload, indent=2)
         except json.JSONDecodeError:
-            logger.warning('Malformed JSON received, returning original.')
+            # logger.warning('Malformed JSON received, returning original.')
             return json_str
         except Exception as e:
             logger.exception('Unhandled exception during JSON extraction.')
             return json_str
+
+    def export_to_jsonfile(self, filename: str, contents: dict, append: bool = False) -> None:
+        mode = 'a' if append else 'w'
+        with open(filename, mode) as ofile:
+            json.dump(contents, ofile, indent=4)
+            ofile.write('\n')
 
     def decrypt(self, message: str) -> str:
         return decrypt(message)
@@ -78,6 +84,6 @@ if __name__ == '__main__':
     print(json_payload)
 
     json_response = '{"payload_type": "cmd", "payload": {"cmd": "topology", "response": {"detail": "Network Topology"}}}'
-    extracted = parser.extract_from_json(json_response)
+    extracted = parser.extract_from_payload(json_response)
     print(extracted)
 
