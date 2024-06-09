@@ -30,8 +30,9 @@ class CommandParser:
                     'cmd': 'ping',
                     'to_node_id': components[1],
                     'HEX': components[2],
-                    'msg': ' '.join(components[3:])
+                    'msg': components[3]
                 }
+############ ...something here?
             else:
                 logger.error('Invalid command or incorrect parameters.')
                 return json.dumps({})
