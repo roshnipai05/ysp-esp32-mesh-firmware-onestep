@@ -6,6 +6,8 @@ Watch this space for hints and instructions over the next 4 days...
 
 ## First Time Setup
 
+[Download the set-up checklist here](https://raw.githubusercontent.com/Makerspace-Ashoka/ysp-esp32-mesh-firmware/main/makerspace_checklist_final.pdf)
+
 If this is your first time at the workshop or if you're setting up the project for the first time, please follow these steps:
 
 ### Step 1: Clone the Repository
