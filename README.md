@@ -4,6 +4,10 @@ Welcome to the workshop offered by the Makerspace! You are going to spend the ne
 
 Watch this space for hints and instructions over the next 4 days...
 
+## Reading List and Presentation Instructions
+
+[This gist has a short reading list based on some of the topics we discussed in the introductory session and the Prompts for your Final Presentation](https://gist.github.com/DeeprajPandey/0f64af8549fac86fecf5dda6f979f825)
+
 ## First Time Setup
 
 ### Step 0: Install Python and Everything Everywhere All At Once
