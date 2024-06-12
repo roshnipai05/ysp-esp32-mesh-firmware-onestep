@@ -1,0 +1,67 @@
+{
+    "getters": [
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "topology"
+            }
+        },
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "get-base-network-credentials",
+            }
+        },
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "get-room-id",
+                "room_id": "0"
+            }
+        }
+    ],
+    "setters": [
+        // Set Base Network Credentials
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "set-base-network-credentials",
+                "base_ssid": "whatyoulike",
+                "base_password": "somethingsneaky"
+            }
+        },
+        // Set Room ID
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "set-room-id",
+                "room_id": "0"
+            }
+        },
+        // Ping Node ( Send Message )
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "ping",
+                "to_node_id": "3867413037",
+                "HEX": "#FF0000",
+                "msg": "hello-world!"
+            }
+        },
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "ping",
+                "to_node_id": "3867413037",
+                "HEX": "#00FF00",
+                "msg": "hello-world!"
+            }
+        },
+        {
+            "payload_type": "cmd",
+            "payload": {
+                "cmd": "esp-reset"
+            }
+        }
+    ]
+}
