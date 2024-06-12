@@ -1,8 +1,12 @@
 # _Mesh_-quarading Surveillance in the Information Age
 
+eGpqZmk6Ly93eWlqLnd5anhrci5zZWMvVHV1ZmhxekZxZHR1by9zNjc5ODI0NDB2dnUydjd1OTg1MDQxMTg4dDM3cjg3MQ== 🤔
+
 Welcome to the workshop offered by the Makerspace! You are going to spend the next 4 days trying to build and break down secure communication channels on a mesh network in your classroom. This guide will help you get started with the codebase setup, and navigate through the tasks for the workshop. Please follow these instructions carefully.
 
 Watch this space for hints and instructions over the next 4 days...
+
+**[🔴 Deadline: 8PM IST, 12 June; Final Presentation Submission Form](https://forms.gle/bZL5fEfTHrSDKX7B9)**
 
 ## Reading List and Presentation Instructions
 
