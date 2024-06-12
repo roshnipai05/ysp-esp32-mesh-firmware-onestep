@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
+        rel="stylesheet">
+    <style>
+        .node {
+            stroke: #fff;
+            stroke-width: 2px;
+        }
+
+        .link {
+            stroke: #777;
+            stroke-width: 2px;
+        }
+
+        body {
+            margin: 0;
+            background-color: #2C3639;
+        }
+
+        .text {
+            pointer-events: none;
+        }
+
+        .Header {
+            padding: 2vh;
+            font-size: 34px;
+            color: #A27B5C;
+            font-family: "Rubik", sans-serif;
+        }
+
+        #network {
+            width: 100vw;
+            height: 90vh;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 120px;
+            height: 28px;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesh Network</title>
+</head>
+
+<body>
+    <header class="Header">Mesh Networking UI</header>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script>
+        var width = window.innerWidth,
+            height = window.innerHeight * 0.79;
+        var links = [];
+        var ids = {
+            864076657: 0, 864076913: 1, 2365952225: 2, 864074501: 3, 864072381: 4, 3867413669: 5, 864041801: 6, 2365948837: 7,
+            864069593: 8, 864073565: 9, 2365949985: 10, 864077329: 11, 3867414565: 12, 864076945: 13, 3867413857: 14, 2365948089: 15,
+            3867413293: 16, 2365952577: 17, 2365952329: 18, 3867421645: 19, 864040541: 20, 864077385: 21, 3867412793: 22, 2365951949: 23,
+            3867411913: 24, 2365951113: 25, 864073801: 26, 3867413889: 27, 3867411781: 28, 3867410537: 29, 3867413665: 30, 864065333: 31,
+            864060077: 32, 864061849: 33, 3867410645: 34, 864070781: 35, 2365947425: 36, 864072973: 37, 2365949265: 38, 2365947517: 39,
+            3867410601: 40, 864060597: 41, 3867413809: 42, 864072769: 43, 2365949373: 44, 2365944413: 45, 2365950521: 46, 3867414557: 47,
+            2365951497: 48, 864069165: 49, 2365952357: 50, 864065361: 51, 2365951869: 52, 864060033: 53, 864060877: 54, 2365949461: 55,
+            2365947113: 56, 3867412585: 57, 2365947765: 58, 3867413037: 59, 2365952105: 60, 864071897: 61, 2365952397: 62, 2365946201: 63,
+            864075961: 64, 3867414265: 65, 2365951697: 66, 2365952661: 67, 2365950961: 68, 864063689: 69, 3867411805: 70, 2365944825: 71,
+            2365952805: 72, 2365949769: 73, 864060237: 74, 2365951381: 75, 864070425: 76
+        };
+
+        function UpdateLinks(data) {
+            var nodeId = data.nodeId;
+            links.push({ source: nodeId, target: nodeId });
+            if (data.subs && Array.isArray(data.subs)) {
+                for (var i = 0; i < data.subs.length; i++) {
+                    links.push({ source: nodeId, target: data.subs[i].nodeId });
+                    UpdateLinks(data.subs[i]);
+                }
+            }
+        }
+
+        fetch('../python-interface/src/topology.json')
+            .then(response => response.json())
+            .then(data => {
+                UpdateLinks(data);
+
+                var nodes = {};
+                links.forEach(function (link) {
+                    link.source = nodes[link.source] || (nodes[link.source] = { id: link.source });
+                    link.target = nodes[link.target] || (nodes[link.target] = { id: link.target });
+                });
+
+                var svg = d3.select('body').append('svg')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                var colorScale = d3.scale.category10();
+                var nodeRadius = width * 0.015;
+
+                var force = d3.layout.force()
+                    .size([width, height])
+                    .nodes(d3.values(nodes))
+                    .links(links)
+                    .on("tick", tick)
+                    .linkDistance(250)
+                    .charge(-1000)
+                    .start();
+
+                var link = svg.selectAll('.link')
+                    .data(links)
+                    .enter().append('line')
+                    .attr('class', 'link');
+
+                var node = svg.selectAll('.node')
+                    .data(force.nodes())
+                    .enter().append('circle')
+                    .attr('class', 'node')
+                    .attr('r', nodeRadius)
+                    .attr('fill', function (d, i) {
+                        var colors = ["#FF69B4", "#33CC33", "#66CCCC", "#FFCC00", "#CC0099", "#0099CC", "#FF9900", "#6600CC"];
+                        return colors[i % colors.length];
+                    })
+                    .on("mouseover", function (d) {
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        tooltip.html("Node ID: " + d.id)
+                            .style("left", (d3.event.pageX + 5) + "px")
+                            .style("top", (d3.event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function (d) {
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+
+                // Append text to each node
+                var text = svg.selectAll('.text')
+                    .data(force.nodes())
+                    .enter().append('text')
+                    .attr('class', 'text')
+                    .attr('text-anchor', 'middle')
+                    .attr('dy', '.35em')
+                    .attr('font-size', nodeRadius)
+                    .attr('font-weight', 'bold')
+                    .attr('fill', '#fff')
+                    .text(function (d) { return ids[d.id]; }); // Display numbers based on node ids
+
+                var tooltip = d3.select("body").append("div")
+                    .attr("class", "tooltip")
+                    .style("opacity", 0);
+
+                function tick(e) {
+                    node.attr('cx', function (d) { return d.x = Math.max(nodeRadius, Math.min(width - nodeRadius, d.x)); })
+                        .attr('cy', function (d) { return d.y = Math.max(nodeRadius, Math.min(height - nodeRadius, d.y)); })
+                        .call(force.drag);
+
+                    link.attr('x1', function (d) { return d.source.x; })
+                        .attr('y1', function (d) { return d.source.y; })
+                        .attr('x2', function (d) { return d.target.x; })
+                        .attr('y2', function (d) { return d.target.y; });
+
+                    text.attr('x', function (d) { return d.x; })
+                        .attr('y', function (d) { return d.y; });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading JSON:', error);
+            });
+    </script>
+    <script src="https://kit.fontawesome.com/4205bea182.js" crossorigin="anonymous"></script>
+</body>
+
+</html>

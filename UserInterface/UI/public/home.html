@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+        <script src="https://unpkg.com/3d-force-graph"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
+            rel="stylesheet">
+    
+    
+        <style>
+            .scene-container canvas {
+                height: 50vh !important;
+                width: 45vw !important;
+            }
+    
+            .scene-container {
+                margin-top: 50px;
+                margin-bottom: 50px;
+                height: 50vh !important;
+                width: 45vw !important;
+            }
+    
+            .graph3d div {
+                width: 45vw !important;
+            }
+    
+            body {
+                margin: 0;
+                background-color: #2C3639;
+            }
+    
+            .Header {
+                padding: 2vh;
+                font-size: 34px;
+                color: #A27B5C;
+                font-family: "Rubik", sans-serif;
+            }
+    
+            .form {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                height: 60vh;
+                padding-left: 10vw;
+                padding-right: 10vw;
+                padding-top: 2vh;
+                padding-bottom: 2vh;
+            }
+    
+            .COMPort {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-end;
+            }
+    
+            .COMPort_ibutton {
+                color: #DCD7C9;
+                margin-top: 2px;
+                margin-left: 10px;
+                cursor: pointer;
+            }
+    
+            .commands {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+    
+            .commands button {
+                background-color: #DCD7C9;
+                height: 30px;
+                border-radius: 5px;
+            }
+    
+            .GraphRow {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+            }
+    
+            .Send {
+                margin-bottom: 20px;
+                justify-content: space-between;
+                display: flex;
+                flex-direction: row;
+            }
+    
+            .Send div {
+                color: #DCD7C9;
+                font-family: "Rubik", sans-serif;
+                display: flex;
+                flex-direction: row;
+            }
+    
+            .Send div input {
+                margin-left: 5px;
+            }
+    
+            .Send div select {
+                margin-left: 5px;
+            }
+    
+            .Send div button {
+                background-color: #DCD7C9;
+                height: 30px;
+                border-radius: 5px;
+            }
+            .SerialMonitor{
+                height: 26.5vh;
+            }
+        </style>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mesh Network</title>
+    </head>
+    
+    <body>
+    
+        <header class="Header">
+            Mesh Networking UI</header>
+        <div class="form">
+            <div class="COMPort">
+                <input type="text">
+                <i class="fa-solid fa-pen COMPort_ibutton"> </i>
+            </div>
+            <div class="GraphRow">
+                <div id="graph3d"></div>
+            </div>
+            <div class="Send">
+                <div>Hex Code: <input type="text"></div>
+                <div>To:<select id="To"></select></div>
+                <div>msg: <input type="text"></div>
+                <div><button type="button">Send</button></div>
+            </div>
+    
+            <div class="commands">
+                <button type="button"> List Nodes</button>
+                <button type="button"> List Colors</button>
+                <button type="button"> Show Last Message</button>
+            </div>
+    
+    
+        </div>
+        <div class = "SerialMonitor">
+
+        </div>
+    
+        <script src="https://kit.fontawesome.com/4205bea182.js" crossorigin="anonymous"></script>
+    
+    
+    
+        <script>
+            
+            fetch('nodeID.csv')
+                .then(response => response.text())
+                .then(data => {
+                    // Parse the CSV data
+                    const csvData = Papa.parse(data, { header: true }).data;
+    
+                    // Create the dropdown options
+                    const dropdown = document.getElementById('To');
+                    csvData.forEach(row => {
+                        const option = document.createElement('option');
+                        option.value = row.column1; // Replace with the column name you want to use for the value
+                        option.text = row.column2; // Replace with the column name you want to use for the text
+                        dropdown.add(option);
+                    });
+                });
+            // Random tree
+            const NODES = 12;
+            const GROUPS = 12;
+            const gData = {
+                nodes: [...Array(NODES).keys()].map(i => ({
+                    id: i,
+                    group: Math.ceil(Math.random() * GROUPS)
+                })),
+                links: [...Array(NODES).keys()]
+                    .filter(id => id)
+                    .map(id => ({
+                        source: id,
+                        target: Math.round(Math.random() * (id - 1))
+                    }))
+            };
+    
+            const Graph = ForceGraph3D()
+                (document.getElementById('graph3d'))
+                .nodeAutoColorBy('group')
+                .linkAutoColorBy(d => gData.nodes[d.source].group)
+                .linkOpacity(0.5)
+                .graphData(gData);
+    
+        </script>
+    </body>
+</html>
