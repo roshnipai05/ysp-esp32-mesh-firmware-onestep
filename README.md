@@ -6,7 +6,7 @@ Welcome to the workshop offered by the Makerspace! You are going to spend the ne
 
 Watch this space for hints and instructions over the next 4 days...
 
-**[🔴 Deadline: 8PM IST, 12 June; Final Presentation Submission Form](https://forms.gle/bZL5fEfTHrSDKX7B9)**
+**[🔴 Deadline: 8PM IST, 13 June; Final Presentation Submission Form](https://forms.gle/bZL5fEfTHrSDKX7B9)**
 
 ## Reading List and Presentation Instructions
 
