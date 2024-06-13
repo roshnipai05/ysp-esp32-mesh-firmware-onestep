@@ -2,6 +2,10 @@
 
 eGpqZmk6Ly93eWlqLnd5anhrci5zZWMvVHV1ZmhxekZxZHR1by9zNjc5ODI0NDB2dnUydjd1OTg1MDQxMTg4dDM3cjg3MQ== 🤔
 
+psst... The train, as it twists along its tracks — first to the last stop of Atbash, then weaving through the rails of the Fence. [Dare to follow the trails? 🤔](https://github.com/Makerspace-Ashoka/ysp-esp32-mesh-firmware/blob/main/assets/afternoon.png)
+
+---
+
 Welcome to the workshop offered by the Makerspace! You are going to spend the next 4 days trying to build and break down secure communication channels on a mesh network in your classroom. This guide will help you get started with the codebase setup, and navigate through the tasks for the workshop. Please follow these instructions carefully.
 
 Watch this space for hints and instructions over the next 4 days...
