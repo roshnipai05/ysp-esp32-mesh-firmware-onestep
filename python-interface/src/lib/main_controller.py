@@ -31,7 +31,7 @@ def serial_interface(node: ESPController, cmd_queue: queue.Queue, shutdown_event
         while not shutdown_event.is_set():
             read_data = node.pull()
             if read_data:
-                print(f'[serial] >>>')
+                print(f'[serial] Received >>>')
                 for line in read_data.split('\n'):
                     print(parser.extract_from_payload(line))
             if cmd_queue.qsize() > 0:

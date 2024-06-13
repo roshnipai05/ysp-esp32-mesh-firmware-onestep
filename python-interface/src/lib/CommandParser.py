@@ -1,7 +1,5 @@
 import json
 
-from colorama import Fore
-
 from Config import TOPOLOGY_FILE, log as logger
 from Config import decrypt
 
@@ -58,11 +56,9 @@ class CommandParser:
             if 'response' in payload:
                 if payload['cmd'] == 'capture-topology':
                     self.export_to_jsonfile(TOPOLOGY_FILE, payload['response'], append=False)
-                    return 'Current topology written to `src/topology.json`'
                 return json.dumps(payload['response'], indent=2)
             elif data.get('payload_type') == 'mesh':
                 payload['msg'] = self.decrypt(payload['msg'])
-                print(Fore.BLUE + 'Received new message\n')
                 return json.dumps(payload, indent=2)
             return json.dumps(payload, indent=2)
         except json.JSONDecodeError:
