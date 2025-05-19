@@ -28,7 +28,7 @@ then you can move to the next step.
 
 this will open up a page such as below 
 
-<img src="" alt="Installing Microsoft App Installer" width="70%"/>
+<img src="./assets/AppInstaller .png" alt="Installing Microsoft App Installer" width="70%"/>
 
 2. Click "Install" — this will install the App Installer package, which includes winget.
 
@@ -77,7 +77,7 @@ Then Git is already installed, and you can skip to the next step.
     1. Go to the official Git for Windows download page:
     https://git-scm.com/download/win and download Git for Windows/x64 Setup.
 
-    <img src="" alt="Installing Git manually from link" width="70%"/>
+    <img src="./assets/GitDownload.png" alt="Installing Git manually from link" width="70%"/>
 
     2. The download should start automatically.
 
@@ -130,7 +130,7 @@ If either command returned a version which is higher than 3.10 then you can move
 
     Visit the official Python download page: https://www.python.org/downloads/windows/
 
-    <img src="" alt="Installing Python manually from link" width="70%"/>
+    <img src="./assets/PythonDownload.png" alt="Installing Python manually from link" width="70%"/>
 
     (it shows the most recent stable release, e.g., 3.12.3). Scroll to the Download Windows Installer (64-bit) corresponding to that and download it. 
 
@@ -177,7 +177,7 @@ If you see a version like 1.89.1 then VS Code is installed and accessible from t
 
     2. Click "Download for windows" and run the installer. 
 
-    <img src="" alt="Installing VS Code manually from link" width="70%"/>
+    <img src="./assets/VScodeDownload.png" alt="Installing VS Code manually from link" width="70%"/>
 
     3. Make sure you check the box that says:
     "Add to PATH (available after restart)"
