@@ -28,7 +28,7 @@ then you can move to the next step.
 
 this will open up a page such as below 
 
-<img src="./assets/AppInstaller .png" alt="Installing Microsoft App Installer" width="70%"/>
+<img src="./assets/AppInstaller .jpg" alt="Installing Microsoft App Installer" width="70%"/>
 
 2. Click "Install" — this will install the App Installer package, which includes winget.
 
