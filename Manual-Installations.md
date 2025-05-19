@@ -203,7 +203,7 @@ Here's how you can navigate to the project directory:
   mv [path to]/ysp-esp32-mesh-firmware-main/
   cd ..
   mv ysp-esp32-mesh-firmware-main/ ysp-esp32-mesh-firmware/
-  cd ysp-esp32-mesh-firmware/python-interface/src
+  cd ysp-esp32-mesh-firmware/Notebooks
   code .
   ```
 - **On Windows:**
@@ -214,7 +214,7 @@ Here's how you can navigate to the project directory:
   cd [path to]\ysp-esp32-mesh-firmware-main\
   cd ..
   MOVE ysp-esp32-mesh-firmware-main\ ysp-esp32-mesh-firmware\
-  cd ysp-esp32-mesh-firmware\python-interface\src\
+  cd ysp-esp32-mesh-firmware\Notebooks
   code .
   ```
   You can open this folder in VS-Code or any other IDE of your choice. But make sure you use a terminal to follow the rest of the instructions.
